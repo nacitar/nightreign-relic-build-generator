@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
-from typing import ByteString, ClassVar, Iterator, cast
+from typing import ByteString, ClassVar, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
