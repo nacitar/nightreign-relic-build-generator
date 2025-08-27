@@ -19,7 +19,7 @@ _ENTRY_HEADER_LENGTH: int = 32
 @dataclass
 class Entry:
     name: str
-    data: ByteString
+    data: memoryview[int]
 
 
 def get_entries(data: ByteString) -> Iterator[Entry]:

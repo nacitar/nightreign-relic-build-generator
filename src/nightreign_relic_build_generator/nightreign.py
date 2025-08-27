@@ -162,7 +162,6 @@ def load_save(data: ByteString, entry_name: str) -> SaveData:
     IV_SIZE = 0x10
     for slot in bnd4.get_entries(data):
         if not entry_name or slot.name == entry_name:
-            slot.data = memoryview(slot.data)
             decryptor = Cipher(
                 algorithms.AES(
                     b"\x18\xf6\x32\x66\x05\xbd\x17\x8a"
