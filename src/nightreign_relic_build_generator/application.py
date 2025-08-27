@@ -3,19 +3,12 @@ from __future__ import annotations
 import argparse
 import logging
 from dataclasses import KW_ONLY, dataclass
-from importlib.resources import open_text as open_text_resource
 from logging import Handler
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .bnd_decrypter import (
-    EncryptionSettings,
-    RelicData,
-    RelicProcessor,
-    SaveData,
-    SaveFile,
-)
+from .nightreign import RelicProcessor, load_save
 
 logger = logging.getLogger(__name__)
 
@@ -81,54 +74,6 @@ def configure_logging(
     logging.info("logging configured")
 
 
-def matching_offsets(matched: list[RelicData]) -> set[int]:
-    first = matched[0].data
-    return set(
-        i
-        for i, val in enumerate(first)
-        if all(r.data[i] == val for r in matched[1:])
-    )
-
-
-def relic_color_a(rid: int) -> str | None:
-    """Return 'red', 'blue', 'yellow', or 'green' for a given relic id.
-    Returns None if the id doesn't match a known color scheme."""
-    # Scheme B: bands of 9 in the last two digits, within 0–35
-    last2 = rid % 100
-    if 0 <= last2 <= 35:
-        return ["Red", "Blue", "Yellow", "Green"][last2 // 9]
-
-    # Scheme A: the big 100xxxx grid
-    s = str(rid)
-    if s.startswith("100") and len(s) >= 4:
-        # 4th digit from the right is the color offset (0=red,1=blue,2=yellow,3=green)
-        hundreds_offset = int(s[-4])
-        if hundreds_offset in (0, 1, 2, 3):
-            return ["Red", "Blue", "Yellow", "Green"][hundreds_offset]
-
-    return None
-
-
-def relic_color(relic_id: int) -> str:
-    """Return color (Red, Blue, Yellow, Green) if determinable from relic_id."""
-    # Rule 1: 7-digit "grid" IDs
-    if relic_id >= 1_000_000:
-        digit = (relic_id // 100) % 10
-        return (
-            ("Red", "Blue", "Yellow", "Green")[digit]
-            if 0 <= digit <= 3
-            else None
-        )
-
-    # Rule 2: compact 0–35 bands
-    suffix = relic_id % 100
-    if 0 <= suffix <= 35:
-        bucket = suffix // 9
-        return ("Red", "Blue", "Yellow", "Green")[bucket]
-
-    return ""
-
-
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Does something.")
     log_group = parser.add_argument_group("logging")
@@ -180,33 +125,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
     )
 
-    save_file = SaveFile.from_sl2_file(
-        Path(args.sl2_file), EncryptionSettings()
-    )
-
-    for save in save_file.saves:
-        print(f"Checking: {save.name}")
-        print(save.data.find(b"\xd1\x07"))
-
-    processor = RelicProcessor(save_file.saves[0])
-    matched = processor.relic_report()
-
-    def check_inference():
-        for relic in matched:
-            color = relic_color(relic.item_id)
-            json_data = processor.item_data.get(str(relic.item_id), {})
-            json_name = json_data.get("name", "UNNAMED")
-            json_color = json_data.get("color", "UNKNOWN")
-            if not color:
-                print(f"CANNOT IDENTIFY {relic.item_id}")
-            elif color != json_color:
-                if json_color != "UNKNOWN":
-                    print(
-                        f"MISMATCH {relic.item_id} {json_name}: calculated {color}, json {json_color}"
-                    )
-                else:
-                    print(f"UNVERFIED: {relic.item_id} {json_name} {color}")
-
-    # TODO: 18272 might be an id that can't be sold!
+    for save_data in load_save(Path(args.sl2_file).read_bytes()):
+        print(f"SaveData: {save_data.title}, {save_data.name}")
+        print(f"- Relics: {len(save_data.relics)}")
+        processor = RelicProcessor(save_data)
+        processor.relic_report()
 
     return 0
