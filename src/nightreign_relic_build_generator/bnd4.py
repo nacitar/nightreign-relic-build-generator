@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import codecs
 import logging
 import struct
 from dataclasses import dataclass
-from typing import ByteString, Iterator
+from typing import ByteString, Iterator, cast
+
+from .utility import read_utf16le_string
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ def get_entries(data: ByteString) -> Iterator[Entry]:
         raise ValueError("not enough data to hold archive header")
     if view[0 : len(ARCHIVE_IDENTIFIER)] != memoryview(ARCHIVE_IDENTIFIER):
         raise ValueError("identifier not in header.")
-    entry_count = struct.unpack("<i", view[12:16])[0]
+    entry_count = cast(int, struct.unpack_from("<I", view, 12)[0])
 
     offset = ARCHIVE_HEADER_LENGTH
     print(f"Processing {entry_count} entries...")
@@ -44,21 +45,16 @@ def get_entries(data: ByteString) -> Iterator[Entry]:
         ):
             raise ValueError("identifier not in entry header")
 
-        entry_length = struct.unpack("<I", entry_header[8:12])[0]
-        entry_data_offset = struct.unpack("<I", entry_header[16:20])[0]
-        entry_name_offset = struct.unpack("<I", entry_header[20:24])[0]
-
-        entry_view = view[entry_data_offset : entry_data_offset + entry_length]
-        if len(entry_view) != entry_length:
+        entry_data_length, _, entry_data_offset, entry_name_offset = cast(
+            tuple[int, int, int, int],
+            struct.unpack_from("<IIII", entry_header, 8),
+        )
+        entry_data_view = view[
+            entry_data_offset : entry_data_offset + entry_data_length
+        ]
+        if len(entry_data_view) != entry_data_length:
             raise ValueError("entry data offset/length points beyond data")
-
-        # find end of name string
-        for entry_name_end in range(entry_name_offset, len(view) - 2, 2):
-            if not view[entry_name_end] and not view[entry_name_end + 1]:
-                break
         yield Entry(
-            name=codecs.decode(
-                view[entry_name_offset:entry_name_end], "utf-16le"
-            ),
-            data=entry_view,
+            name=read_utf16le_string(view, entry_name_offset),
+            data=entry_data_view,
         )

@@ -1,20 +1,15 @@
 from __future__ import annotations
 
-import codecs
 import logging
+import struct
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import ByteString, ClassVar, Iterator
+from typing import ByteString, ClassVar, Iterator, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
-from .utility import (
-    find_utf16_string_end,
-    get_resource_json,
-    read_int16,
-    read_int32,
-)
+from .utility import get_resource_json, read_utf16le_string
 
 logger = logging.getLogger(__name__)
 
@@ -41,15 +36,15 @@ def get_inventory_slot_type(data: ByteString, offset: int) -> int | None:
     return None
 
 
-@dataclass
+@dataclass(frozen=True)
 class RelicData:
-    EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     item_id: int
     effect_ids: list[int]
 
 
 @dataclass(frozen=True, kw_only=True)
 class SaveData:
+    _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     _MINIMUM_INVENTORY_SIZE: ClassVar[int] = 5  # how many entries must exist
     _MINIMUM_NAME_LENGTH: ClassVar[int] = 3  # smaller matches non-name things
 
@@ -59,13 +54,19 @@ class SaveData:
     @cached_property
     def murk(self) -> int:
         if self.name_offset:
-            return read_int32(self.data, self.name_offset + 52)
+            return cast(
+                int,
+                struct.unpack_from("<I", self.data, self.name_offset + 52)[0],
+            )
         return -1
 
     @cached_property
     def sigils(self) -> int:
         if self.name_offset:
-            return read_int32(self.data, self.name_offset - 64)
+            return cast(
+                int,
+                struct.unpack_from("<I", self.data, self.name_offset - 64)[0],
+            )
         return -1
 
     @cached_property
@@ -85,8 +86,7 @@ class SaveData:
     def name(self) -> str:
         if self.name_offset is None:
             return ""
-        view = memoryview(self.data)[self.name_offset :]
-        return codecs.decode(view[: find_utf16_string_end(view)], "utf-16le")
+        return read_utf16le_string(self.data, self.name_offset)
 
     @cached_property
     def inventory_offset(self) -> int | None:
@@ -131,11 +131,16 @@ class SaveData:
             if slot_type == INVENTORY_SLOT_RELIC:
                 relics.append(
                     RelicData(
-                        item_id=read_int16(view, offset + 4),
+                        item_id=cast(
+                            int, struct.unpack_from("<H", view, offset + 4)[0]
+                        ),
                         effect_ids=[
-                            read_int32(view, offset + 16),
-                            read_int32(view, offset + 20),
-                            read_int32(view, offset + 24),
+                            effect_id
+                            for effect_id in cast(
+                                tuple[int, int, int],
+                                struct.unpack_from("<III", view, offset + 16),
+                            )
+                            if effect_id != self.__class__._EMPTY_EFFECT_ID
                         ],
                     )
                 )
@@ -206,8 +211,6 @@ class RelicProcessor:
                 print(f"MISSING RELIC: couldn't find id {relic.item_id}")
 
             for effect_id in relic.effect_ids:
-                if effect_id == RelicData.EMPTY_EFFECT_ID:
-                    continue
                 attributes = self.effect_data.get(str(effect_id))
                 if attributes:
                     print(f"- {effect_id} {attributes['name']}")
