@@ -31,7 +31,7 @@ def get_entries(data: ByteString) -> Iterator[Entry]:
     entry_count = cast(int, struct.unpack_from("<I", view, 12)[0])
 
     offset = ARCHIVE_HEADER_LENGTH
-    print(f"Processing {entry_count} entries...")
+    logger.debug(f"Processing {entry_count} entries...")
     while entry_count:
         entry_count -= 1
         next_offset = offset + ENTRY_HEADER_LENGTH

@@ -4,6 +4,8 @@ import logging
 import struct
 from dataclasses import dataclass, field
 from functools import cached_property
+from pathlib import Path
+from types import MappingProxyType
 from typing import ByteString, ClassVar, Iterator, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -13,27 +15,39 @@ from .utility import get_resource_json, read_utf16le_string
 
 logger = logging.getLogger(__name__)
 
-INVENTORY_EMPTY_SLOT_BYTES = b"\x00\x00\x00\x00\xff\xff\xff\xff"
-INVENTORY_SLOT_TYPE_TO_SIZE: dict[int, int] = {
-    0x80: 80,  # weapons
-    0x90: 16,  # armor (skins?)
-    (INVENTORY_SLOT_RELIC := 0xC0): 72,  # relics
-    (INVENTORY_SLOT_EMPTY := 0x00): len(INVENTORY_EMPTY_SLOT_BYTES),
-}
 
+@dataclass
+class InventorySlotInfo:
+    _EMPTY_SLOT_BYTES: ClassVar[bytes] = b"\x00\x00\x00\x00\xff\xff\xff\xff"
+    _TYPE_ID_TO_LENGTH: ClassVar[MappingProxyType[int, int]] = (
+        MappingProxyType(
+            {0x80: 80, 0x90: 16, 0xC0: 72}  # weapon  # armor  # relic
+        )
+    )
+    type_id: int
+    length: int
 
-def get_inventory_slot_type(data: ByteString, offset: int) -> int | None:
-    pos = offset + 2
-    if pos + 1 < len(data):
-        if data[pos] in (0x80, 0x81, 0x82, 0x83, 0x84, 0x85):
-            return data[pos + 1]
-    if offset + len(INVENTORY_EMPTY_SLOT_BYTES) < len(data):
-        if memoryview(data)[
-            offset : offset + len(INVENTORY_EMPTY_SLOT_BYTES)
-        ] == memoryview(INVENTORY_EMPTY_SLOT_BYTES):
-            return INVENTORY_SLOT_EMPTY
+    def is_relic(self) -> bool:
+        return self.type_id == 0xC0
 
-    return None
+    @classmethod
+    def from_data(
+        cls, data: ByteString, offset: int
+    ) -> InventorySlotInfo | None:
+        pos = offset + 2
+        if pos + 1 < len(data):
+            if data[pos] in (0x80, 0x81, 0x82, 0x83, 0x84, 0x85):
+                type_id = data[pos + 1]
+                length = cls._TYPE_ID_TO_LENGTH.get(type_id, 0)
+                if length:
+                    return InventorySlotInfo(type_id=type_id, length=length)
+        empty_slot_len = len(cls._EMPTY_SLOT_BYTES)
+        if offset + empty_slot_len < len(data):
+            if memoryview(data)[
+                offset : offset + empty_slot_len
+            ] == memoryview(cls._EMPTY_SLOT_BYTES):
+                return InventorySlotInfo(type_id=0x00, length=empty_slot_len)
+        return None
 
 
 @dataclass(frozen=True)
@@ -97,19 +111,12 @@ class SaveData:
             offset = start_offset
             entries = 0
             while offset < len(self.data):
-                slot_type = get_inventory_slot_type(self.data, offset)
-                # print(f"got {offset} == {slot_type}")
-                if (
-                    slot_type is not None
-                    and (
-                        slot_size := INVENTORY_SLOT_TYPE_TO_SIZE.get(slot_type)
-                    )
-                    is not None
-                ):
+                slot_info = InventorySlotInfo.from_data(self.data, offset)
+                if slot_info is not None:
                     entries += 1
                     if entries >= SaveData._MINIMUM_INVENTORY_SIZE:
                         return start_offset
-                    offset += slot_size
+                    offset += slot_info.length
                 else:
                     break
             start_offset += 2
@@ -124,11 +131,10 @@ class SaveData:
         offset = self.inventory_offset
         view = memoryview(self.data)
         while True:
-            slot_type = get_inventory_slot_type(view, offset)
-            if slot_type is None:
+            slot_info = InventorySlotInfo.from_data(view, offset)
+            if slot_info is None:
                 break
-            slot_size = INVENTORY_SLOT_TYPE_TO_SIZE[slot_type]
-            if slot_type == INVENTORY_SLOT_RELIC:
+            if slot_info.is_relic():
                 relics.append(
                     RelicData(
                         item_id=cast(
@@ -146,30 +152,36 @@ class SaveData:
                 )
             else:
                 logger.debug(
-                    f"non-relic slot encountered, type: {slot_type:x}"
+                    f"non-relic slot encountered, type: {slot_info.type_id:x}"
                 )
-            offset += slot_size
+            offset += slot_info.length
         return tuple(relics)
 
 
-def load_save(data: ByteString) -> Iterator[SaveData]:
+def load_save(data: ByteString, entry_name: str) -> SaveData:
     IV_SIZE = 0x10
     for slot in bnd4.get_entries(data):
-        logger.debug(f"processing slot ({len(slot.data)} bytes): {slot.name}")
-        slot.data = memoryview(slot.data)
-        decryptor = Cipher(
-            algorithms.AES(
-                b"\x18\xf6\x32\x66\x05\xbd\x17\x8a"
-                b"\x55\x24\x52\x3a\xc0\xa0\xc6\x09"
-            ),
-            modes.CBC(slot.data[:IV_SIZE]),
-        ).decryptor()
-        yield SaveData(
-            title=slot.name,
-            data=(
-                decryptor.update(slot.data[IV_SIZE:]) + decryptor.finalize()
-            ),
-        )
+        if not entry_name or slot.name == entry_name:
+            slot.data = memoryview(slot.data)
+            decryptor = Cipher(
+                algorithms.AES(
+                    b"\x18\xf6\x32\x66\x05\xbd\x17\x8a"
+                    b"\x55\x24\x52\x3a\xc0\xa0\xc6\x09"
+                ),
+                modes.CBC(slot.data[:IV_SIZE]),
+            ).decryptor()
+            return SaveData(
+                title=slot.name,
+                data=(
+                    decryptor.update(slot.data[IV_SIZE:])
+                    + decryptor.finalize()
+                ),
+            )
+    raise ValueError(f"No entry found named: {entry_name}")
+
+
+def load_save_file(path: Path, entry_name: str) -> SaveData:
+    return load_save(path.read_bytes(), entry_name)
 
 
 @dataclass
@@ -188,10 +200,6 @@ class RelicProcessor:
         )
         self.item_data: dict[str, dict[str, str]] = get_resource_json(
             "items.json"
-        )
-        print(
-            f"Processor: {self.save_data.name}"
-            f" (offset {self.save_data.name_offset})"
         )
 
     def relic_report(self, color_filter: str = "") -> list[RelicData]:

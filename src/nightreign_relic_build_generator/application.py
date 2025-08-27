@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .nightreign import RelicProcessor, load_save
+from .nightreign import RelicProcessor, load_save_file
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +109,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Maximizes console log verbosity to DEBUG.  Overrides -v and -q.",
     )
     parser.add_argument("sl2_file", help="The save file to parse.")
+    parser.add_argument(
+        "-s",
+        "--slot",
+        type=int,
+        choices=range(10),  # 0..9 inclusive
+        metavar="N",
+        help="save slot index (0-9)",
+        default=0,
+    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -124,11 +133,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         ),
     )
+    save_title = f"USER_DATA{args.slot:03d}"
+    logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
 
-    for save_data in load_save(Path(args.sl2_file).read_bytes()):
-        print(f"SaveData: {save_data.title}, {save_data.name}")
-        print(f"- Relics: {len(save_data.relics)}")
-        processor = RelicProcessor(save_data)
-        processor.relic_report()
+    save_data = load_save_file(Path(args.sl2_file), save_title)
+    print(f"Loaded entry {save_data.title}: {save_data.name}")
+    print(f"- Relics: {len(save_data.relics)}")
+    processor = RelicProcessor(save_data)
+    processor.relic_report()
 
     return 0
