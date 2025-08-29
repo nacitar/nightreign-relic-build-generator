@@ -4,7 +4,8 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum, unique
-from typing import ClassVar, Sequence
+from itertools import chain, permutations
+from typing import ClassVar, Generator, Sequence
 
 from .nightreign import RelicData
 from .utility import get_resource_json
@@ -102,7 +103,6 @@ class RelicDatabase:
                 self.relic_names[int(item_id)] = name
                 logger.debug(f"Non-standard name: {name}")
 
-        # TODO: process effects
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
         for effect_id, attributes in effect_data.items():
             name = attributes["name"]
@@ -122,9 +122,116 @@ class RelicDatabase:
         #    if attributes["color"]
 
 
+RAIDER_URNS: dict[
+    str, tuple[RelicColor | None, RelicColor | None, RelicColor | None]
+] = {
+    "Raider's Urn": (RelicColor.RED, RelicColor.GREEN, RelicColor.GREEN),
+    "Raider's Goblet": (RelicColor.RED, RelicColor.BLUE, RelicColor.YELLOW),
+    "Raider's Chalice": (RelicColor.RED, RelicColor.RED, None),
+    "Soot-Covered Raider's Urn": (
+        RelicColor.BLUE,
+        RelicColor.BLUE,
+        RelicColor.GREEN,
+    ),
+    "Sealed Raider's Urn": (
+        RelicColor.GREEN,
+        RelicColor.GREEN,
+        RelicColor.RED,
+    ),
+    "Sacred Erdtree Grail": (
+        RelicColor.YELLOW,
+        RelicColor.YELLOW,
+        RelicColor.YELLOW,
+    ),
+    "Spirit Shelter Grail": (
+        RelicColor.GREEN,
+        RelicColor.GREEN,
+        RelicColor.GREEN,
+    ),
+    "Giant's Cradle Grail": (
+        RelicColor.BLUE,
+        RelicColor.BLUE,
+        RelicColor.BLUE,
+    ),
+}
+
+
 @dataclass
 class RelicProcessor:
     database: RelicDatabase
+    score_table: dict[str, int]
+
+    def get_effect_score(self, effect_ids: Sequence[int]) -> int:
+        # TODO: eliminate duplicates/incompatible things/doesn't stack/...
+        total_score = 0
+        for effect_id in effect_ids:
+            effect_info = self.database.effect_id_to_info.get(effect_id)
+            if not effect_info:
+                logger.warning(f"Skipping unknown effect: {effect_id}")
+                continue
+            effect_score = self.score_table.get(effect_info.name, 0)
+            if effect_score:
+                effect_score += effect_info.level
+            total_score += effect_score
+        return total_score
+
+    def get_relic_score(self, relic: RelicData) -> int:
+        return self.get_effect_score(relic.effect_ids)
+
+    def relic_permutations(
+        self,
+        relics: Sequence[RelicData],
+        target_urns: dict[
+            str, tuple[RelicColor | None, RelicColor | None, RelicColor | None]
+        ],
+        *,
+        minimum_per_relic: int = 1,
+    ) -> Generator[tuple[RelicData, ...], None, None]:
+        # first, score and prune out any relics that provide no value
+
+        pruned: list[RelicData] = []
+        for relic in relics:
+            score = self.get_relic_score(relic)
+            if score >= minimum_per_relic:
+                pruned.append(relic)
+
+        urn_color_set = set(target_urns.values())
+        print(f"Pruned: {len(pruned)}")
+
+        for build in chain.from_iterable(
+            permutations(pruned, r) for r in range(1, min(3, len(pruned)) + 1)
+        ):
+            missing_data = False
+            build_colors: list[RelicColor | None] = []
+            for relic in build:
+                relic_info = self.database.relic_id_to_info.get(relic.item_id)
+                if not relic_info:
+                    logger.error(f"Missing info for relic: {relic.item_id}")
+                    missing_data = True
+                    break
+                build_colors.append(relic_info.color)
+            if missing_data:
+                continue
+            while len(build_colors) < 3:
+                build_colors.append(None)
+
+            if len(build_colors) != 3:
+                raise AssertionError()
+
+            possibilities: set[
+                tuple[RelicColor | None, RelicColor | None, RelicColor | None]
+            ] = {
+                (build_colors[0], build_colors[1], build_colors[2]),
+                (build_colors[0], build_colors[1], None),
+                (build_colors[0], None, build_colors[2]),
+                (None, build_colors[1], build_colors[2]),
+                (build_colors[0], None, None),
+                (None, build_colors[1], None),
+                (None, None, build_colors[2]),
+                (None, None, None),
+            }
+            if possibilities & urn_color_set:
+                yield build
 
     def relic_report(self, relics: Sequence[RelicData]) -> None:
         count = 0

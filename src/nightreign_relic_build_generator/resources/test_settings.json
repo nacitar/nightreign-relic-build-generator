@@ -1,0 +1,24 @@
+{
+    "Partial HP Restoration upon Post-Damage Attacks": 20,
+    "Attack power increased for each evergaol prisoner defeated": 20,
+    
+    "Improved Damage Negation at Low HP": 15,
+    "Slowly restore HP for self and nearby allies when HP is low": 15,
+    "Taking attacks improves attack power": 15,
+
+    "Stonesword Key in possession at start of expedition": 5,
+    "[Raider] Damage taken while using Character Skill improves attack power and stamina": 5,
+
+    "Increased Maximum HP": 2,
+    "Increased Maximum Stamina": 2,
+    "Improved Item Discovery": 2,
+    "Stamina Recovery upon Landing Attacks": 2,
+    "Small Pouch in possession at start of expedition": 2,
+    "Increased Maximum FP": 2,
+    "Continuous HP Recovery": 2,
+    "Poise": 2,
+    "Strength": 2,
+
+    "Increased rune acquisition for self and allies": 1,
+    "Flask Also Heals Allies": 1
+}
