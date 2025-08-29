@@ -11,24 +11,48 @@ from typing import ByteString, ClassVar, cast
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
-from .utility import get_resource_json, read_utf16le_string
+from .utility import read_utf16le_string
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
+@dataclass(kw_only=True)
 class InventorySlotInfo:
     _EMPTY_SLOT_BYTES: ClassVar[bytes] = b"\x00\x00\x00\x00\xff\xff\xff\xff"
     _TYPE_ID_TO_LENGTH: ClassVar[MappingProxyType[int, int]] = (
-        MappingProxyType(
-            {0x80: 80, 0x90: 16, 0xC0: 72}  # weapon  # armor  # relic
-        )
+        MappingProxyType({0x80: 80, 0x90: 16, 0xC0: 72})
     )
+    _VALID_SUBTYPES: ClassVar[tuple[int, ...]] = (
+        0x80,
+        0x81,
+        0x82,
+        0x83,
+        0x84,
+        0x85,
+    )
+    subtype_id: int | None
     type_id: int
     length: int
 
+    @property
+    def is_default_subtype(self) -> bool:
+        return self.subtype_id == 0x80  # TODO: when is this ever different?
+
+    @property
     def is_relic(self) -> bool:
         return self.type_id == 0xC0
+
+    @property
+    def is_weapon(self) -> bool:
+        return self.type_id == 0x80
+
+    @property
+    def is_armor(self) -> bool:
+        return self.type_id == 0x90
+
+    @property
+    def is_empty_slot(self) -> bool:
+        return self.subtype_id is None and self.type_id == 0
 
     @classmethod
     def from_data(
@@ -36,17 +60,22 @@ class InventorySlotInfo:
     ) -> InventorySlotInfo | None:
         pos = offset + 2
         if pos + 1 < len(data):
-            if data[pos] in (0x80, 0x81, 0x82, 0x83, 0x84, 0x85):
+            subtype_id = data[pos]
+            if subtype_id in cls._VALID_SUBTYPES:
                 type_id = data[pos + 1]
                 length = cls._TYPE_ID_TO_LENGTH.get(type_id, 0)
                 if length:
-                    return InventorySlotInfo(type_id=type_id, length=length)
+                    return InventorySlotInfo(
+                        subtype_id=subtype_id, type_id=type_id, length=length
+                    )
         empty_slot_len = len(cls._EMPTY_SLOT_BYTES)
         if offset + empty_slot_len < len(data):
             if memoryview(data)[
                 offset : offset + empty_slot_len
             ] == memoryview(cls._EMPTY_SLOT_BYTES):
-                return InventorySlotInfo(type_id=0x00, length=empty_slot_len)
+                return InventorySlotInfo(
+                    subtype_id=None, type_id=0x00, length=empty_slot_len
+                )
         return None
 
 
@@ -105,36 +134,28 @@ class SaveData:
     @cached_property
     def inventory_offset(self) -> int | None:
         start_offset = 0
-        # my relics start at 20, but allowing for future changes that move it
-        search_end = 100
-        while start_offset < search_end:
+        while start_offset < 100:  # my offset is 20, but allowing for changes
             offset = start_offset
             entries = 0
-            while offset < len(self.data):
-                slot_info = InventorySlotInfo.from_data(self.data, offset)
-                if slot_info is not None:
-                    entries += 1
-                    if entries >= SaveData._MINIMUM_INVENTORY_SIZE:
-                        return start_offset
-                    offset += slot_info.length
-                else:
-                    break
-            start_offset += 2
+            while offset < len(self.data) and (
+                slot_info := InventorySlotInfo.from_data(self.data, offset)
+            ):
+                entries += 1
+                if entries >= SaveData._MINIMUM_INVENTORY_SIZE:
+                    return start_offset
+                offset += slot_info.length
+            start_offset += 2  # only look at 2-byte-aligned offsets
         return None
 
     @cached_property
     def relics(self) -> tuple[RelicData, ...]:
-        if self.inventory_offset is None:
-            return tuple()
-        relics: list[RelicData] = []
-
         offset = self.inventory_offset
+        if offset is None:
+            return tuple()
         view = memoryview(self.data)
-        while True:
-            slot_info = InventorySlotInfo.from_data(view, offset)
-            if slot_info is None:
-                break
-            if slot_info.is_relic():
+        relics: list[RelicData] = []
+        while slot_info := InventorySlotInfo.from_data(view, offset):
+            if slot_info.is_relic:
                 relics.append(
                     RelicData(
                         item_id=cast(
@@ -146,7 +167,7 @@ class SaveData:
                                 tuple[int, int, int],
                                 struct.unpack_from("<III", view, offset + 16),
                             )
-                            if effect_id != self.__class__._EMPTY_EFFECT_ID
+                            if effect_id != type(self)._EMPTY_EFFECT_ID
                         ],
                     )
                 )
@@ -161,6 +182,7 @@ class SaveData:
 def load_save(data: ByteString, entry_name: str) -> SaveData:
     IV_SIZE = 0x10
     for slot in bnd4.get_entries(data):
+        logger.debug(f"encountered save slot named: {slot.name}")
         if not entry_name or slot.name == entry_name:
             decryptor = Cipher(
                 algorithms.AES(
@@ -181,50 +203,3 @@ def load_save(data: ByteString, entry_name: str) -> SaveData:
 
 def load_save_file(path: Path, entry_name: str) -> SaveData:
     return load_save(path.read_bytes(), entry_name)
-
-
-@dataclass
-class RelicProcessor:
-    save_data: SaveData
-    effect_data: dict[str, dict[str, str]] = field(
-        default_factory=dict, init=False
-    )
-    item_data: dict[str, dict[str, str]] = field(
-        default_factory=dict, init=False
-    )
-
-    def __post_init__(self) -> None:
-        self.effect_data: dict[str, dict[str, str]] = get_resource_json(
-            "effects.json"
-        )
-        self.item_data: dict[str, dict[str, str]] = get_resource_json(
-            "items.json"
-        )
-
-    def relic_report(self, color_filter: str = "") -> list[RelicData]:
-        matched: list[RelicData] = []
-        count = 0
-        for relic in self.save_data.relics:
-            count += 1
-            attributes = self.item_data.get(
-                str(relic.item_id)
-            )  # TODO: why str?
-            color = "MISSING"
-            if attributes:
-                name = attributes["name"]
-                color = attributes.get("color", color)
-                print(f"RELIC {relic.item_id}: [{color}] {name}")
-            else:
-                print(f"MISSING RELIC: couldn't find id {relic.item_id}")
-
-            for effect_id in relic.effect_ids:
-                attributes = self.effect_data.get(str(effect_id))
-                if attributes:
-                    print(f"- {effect_id} {attributes['name']}")
-                else:
-                    print(f"- WARNING: couldn't find effect id {effect_id}")
-
-            if not color_filter or color == color_filter:
-                matched.append(relic)
-        print(f"==== Listed {count} relics. ====")
-        return matched

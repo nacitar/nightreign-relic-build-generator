@@ -8,7 +8,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .nightreign import RelicProcessor, load_save_file
+from .finder import RelicDatabase, RelicProcessor
+from .nightreign import load_save_file
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     save_data = load_save_file(Path(args.sl2_file), save_title)
     print(f"Loaded entry {save_data.title}: {save_data.name}")
     print(f"- Relics: {len(save_data.relics)}")
-    processor = RelicProcessor(save_data)
-    processor.relic_report()
+    database = RelicDatabase()
+    processor = RelicProcessor(database)
+    # processor.find_effect_groupings()
+    processor.relic_report(save_data.relics)
 
     return 0
