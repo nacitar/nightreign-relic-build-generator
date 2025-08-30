@@ -230,7 +230,7 @@ class RelicProcessor:
                 (None, None, build_colors[2]),
                 (None, None, None),
             }
-            if possibilities & urn_color_set:
+            if not possibilities.isdisjoint(urn_color_set):
                 yield build
 
     def relic_report(self, relics: Sequence[RelicData]) -> None:
