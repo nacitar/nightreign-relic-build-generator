@@ -939,6 +939,10 @@
     "name": "Grand Burning Scene",
     "color": "Red"
   },
+  "20971": {
+    "name": "Polished Burning Scene",
+    "color": "Red"
+  },
   "20972": {
     "name": "Grand Burning Scene",
     "color": "Red"
@@ -1005,6 +1009,10 @@
   },
   "21262": {
     "name": "Grand Tranquil Scene",
+    "color": "Green"
+  },
+  "21271": {
+    "name": "Polished Tranquil Scene",
     "color": "Green"
   },
   "21281": {
