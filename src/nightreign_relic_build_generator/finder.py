@@ -56,13 +56,13 @@ class RelicInfo:
 class EffectInfo:
     STACKABLE_REGEX: ClassVar[list[re.Pattern[str]]] = [
         re.compile(
-            "^Improved .? (Attack Power|Resistance|Damage Negation|Incantations|Sorcery|Damage)( at (Low|Full) HP)?$"
+            "^Improved (.+ )?(Attack Power|Resistance|Damage Negation|Incantations|Sorcery|Damage)( at (Low|Full) HP)?$"
         ),
         re.compile(
             "^(Dexterity|Endurance|Faith|Intelligence|Mind|Poise|Strength|Vigor|Arcane)$"
         ),
         re.compile(
-            "^Improved (Guard Counters|Initial Standard Attack|Perfuming Arts|Roar & Breath Attacks|Stance-Breaking when .?)$"
+            "^Improved (Guard Counters|Initial Standard Attack|Perfuming Arts|Roar & Breath Attacks|Stance-Breaking when .+)$"
         ),
         re.compile("^Boosts Attack Power of Added Affinity Attacks$"),
         re.compile("^FP Restoration upon Successive Attacks$"),
@@ -74,10 +74,10 @@ class EffectInfo:
         re.compile("^Ultimate Art Gauge$"),
     ]
     STARTING_IMBUE_REGEX: ClassVar[re.Pattern[str]] = re.compile(
-        "^Starting armament (deals|inflicts) .?$"
+        "^Starting armament (deals|inflicts) .+$"
     )
     STARTING_SKILL_REGEX: ClassVar[re.Pattern[str]] = re.compile(
-        "^Changes compatible armament's skill to .?$"
+        "^Changes compatible armament's skill to .+$"
     )
 
     name: str
@@ -172,28 +172,30 @@ UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
     "Giant's Cradle Grail": (Color.BLUE, Color.BLUE, Color.BLUE),
 }
 
-RAIDER_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
-    "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
-    "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
-    "Raider's Chalice": (Color.RED, Color.RED, None),
-    "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
-    "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
-}
-
-GUARDIAN_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
-    "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-    "Guardian's Goblet": (Color.BLUE, Color.BLUE, Color.GREEN),
-    "Guardian's Chalice": (Color.BLUE, Color.YELLOW, None),
-    "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
-    "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
-}
-
-EXECUTOR_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
-    "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-    "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
-    "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
-    "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
-    "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+CLASS_URNS: dict[
+    str, dict[str, tuple[Color | None, Color | None, Color | None]]
+] = {
+    "raider": {
+        "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+        "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+        "Raider's Chalice": (Color.RED, Color.RED, None),
+        "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
+    },
+    "guardian": {
+        "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Guardian's Goblet": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Guardian's Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+        "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+    },
+    "executor": {
+        "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
+        "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
+        "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+    },
 }
 
 
@@ -211,11 +213,10 @@ class Build(ScoredEffects):
 @dataclass
 class RelicProcessor:
     database: RelicDatabase
-    score_table: dict[str, int]
 
-    def get_scored_effects(self, effect_ids: Sequence[int]) -> ScoredEffects:
-        # doesn't score things that don't stack
-        # TODO: keep up with skill/imbue?  factor in class.
+    def get_scored_effects(
+        self, effect_ids: Sequence[int], *, score_table: dict[str, int]
+    ) -> ScoredEffects:
         score = 0
         seen: set[str] = set()
         effects: list[EffectInfo] = []
@@ -233,23 +234,26 @@ class RelicProcessor:
                     has_starting_imbue |= info.is_starting_imbue
                     has_starting_skill |= info.is_starting_skill
                     effects.append(info)
-                    score += self.score_table.get(info.name, 0) * (
-                        info.level + 1
-                    )
+                    score += score_table.get(info.name, 0) * (info.level + 1)
         return ScoredEffects(effects=tuple(effects), score=score)
 
     def builds(
         self,
         relics: Sequence[RelicData],
         urns: set[tuple[Color | None, Color | None, Color | None]],
+        *,
+        score_table: dict[str, int],
     ) -> Generator[Build, None, None]:
-        for combination in self.relic_permutations(relics, urns):
+        for combination in self.relic_permutations(
+            relics, urns, score_table=score_table
+        ):
             scored_effects = self.get_scored_effects(
                 [
                     effect_id
                     for relic in combination
                     for effect_id in relic.effect_ids
-                ]
+                ],
+                score_table=score_table,
             )
             yield Build(
                 effects=scored_effects.effects,
@@ -262,6 +266,7 @@ class RelicProcessor:
         relics: Sequence[RelicData],
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
+        score_table: dict[str, int],
         count: int = 50,
     ) -> list[Build]:
         # TODO: estimate how long it might take?
@@ -269,7 +274,9 @@ class RelicProcessor:
             count,
             (
                 (build.score, build)
-                for build in self.builds(relics=relics, urns=urns)
+                for build in self.builds(
+                    relics=relics, urns=urns, score_table=score_table
+                )
             ),
             key=lambda entry: entry[0],
         )
@@ -280,13 +287,16 @@ class RelicProcessor:
         relics: Sequence[RelicData],
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
+        score_table: dict[str, int],
         minimum_per_relic: int = 1,
     ) -> Generator[tuple[RelicData, ...], None, None]:
         # first, score and prune out any relics that provide no value
         relics = [
             relic
             for relic in relics
-            if self.get_scored_effects(relic.effect_ids).score
+            if self.get_scored_effects(
+                relic.effect_ids, score_table=score_table
+            ).score
             >= minimum_per_relic
         ]
         print(f"Pruned Relics: {len(relics)}")

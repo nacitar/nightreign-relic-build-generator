@@ -8,14 +8,13 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import (
-    EXECUTOR_URNS,
-    UNIVERSAL_URNS,
-    RelicDatabase,
-    RelicProcessor,
-)
+from .finder import CLASS_URNS, UNIVERSAL_URNS, RelicDatabase, RelicProcessor
 from .nightreign import load_save_file
-from .utility import get_resource_json
+from .utility import (
+    get_builtin_scores,
+    list_builtin_score_resources,
+    load_scores,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -115,16 +114,58 @@ def main(argv: Sequence[str] | None = None) -> int:
         const=logging.DEBUG,
         help="Maximizes console log verbosity to DEBUG.  Overrides -v and -q.",
     )
-    parser.add_argument("sl2_file", help="The save file to parse.")
-    parser.add_argument(
-        "-s",
-        "--slot",
+    subparsers = parser.add_subparsers(dest="operation", required=True)
+
+    subparsers.add_parser("list-builtins", help="List builtin score profiles")
+
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument("sl2_file", help="The save file to parse.")
+    common.add_argument(
+        "-i",
+        "--index",
         type=int,
         choices=range(10),  # 0..9 inclusive
         metavar="N",
         help="save slot index (0-9)",
         default=0,
     )
+
+    subparsers.add_parser(
+        "dump-relics",
+        parents=[common],
+        help="Dumps a list of all parsed relics.",
+    )
+
+    compute_parser = subparsers.add_parser(
+        "compute",
+        parents=[common],
+        help="Computes the best possible relic combinations.",
+    )
+
+    scores_group = compute_parser.add_mutually_exclusive_group(required=True)
+    scores_group.add_argument(
+        "-s",
+        "--scores",
+        metavar="JSON_FILE",
+        help="A json file mapping relic effect names to integral scores.",
+    )
+    scores_group.add_argument(
+        "-b",
+        "--builtin-scores",
+        metavar="NAME",
+        choices=list_builtin_score_resources(),
+        help="The name of a builtin score profile.",
+    )
+
+    compute_parser.add_argument(
+        "-c",
+        "--character-class",
+        metavar="NAME",
+        help='The name of the class whose urns will be used, or "universal".',
+        choices=tuple(CLASS_URNS.keys()) + ("universal",),
+        required=True,
+    )
+
     # TODO: minimum score per relic
     args = parser.parse_args(args=argv)
 
@@ -141,25 +182,47 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         ),
     )
-    save_title = f"USER_DATA{args.slot:03d}"
-    logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
 
-    save_data = load_save_file(Path(args.sl2_file), save_title)
-    print(f"Loaded entry {save_data.title}: {save_data.name}")
-    print(f"- Relics: {len(save_data.relics)}")
-    database = RelicDatabase()
-    processor = RelicProcessor(
-        database, get_resource_json("settings_executor.json")
-    )
-    # processor.find_effect_groupings()
-    processor.relic_report(save_data.relics)
-    # return 0
-    urns = set((EXECUTOR_URNS | UNIVERSAL_URNS).values())  # TODO: from args
-    for build in reversed(processor.top_builds(save_data.relics, urns)):
-        print("")
-        print(f"=== SCORE: {build.score} ===")
-        processor.relic_report(build.relics)
+    if args.operation == "list-builtins":
+        for resource_name in list_builtin_score_resources():
+            print(resource_name)
+    elif args.operation in ("dump-relics", "compute"):
+        save_title = f"USER_DATA{args.index:03d}"
+        logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
+        save_data = load_save_file(Path(args.sl2_file), save_title)
+        logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
+        database = RelicDatabase()
+        processor = RelicProcessor(database)
+        if args.operation == "dump-relics":
+            processor.relic_report(save_data.relics)
+            print("")
+            print(f"Listed {len(save_data.relics)} relics.")
+        elif args.operation == "compute":
+            if args.scores:
+                score_table = load_scores(args.scores)
+            elif args.builtin_scores:
+                score_table = get_builtin_scores(args.builtin_scores)
 
-    print("")
-    print("Highest scores are listed last.  Scroll up and compare.")
+            urns = set(UNIVERSAL_URNS.values())
+            if args.character_class != "universal":
+                urns.update(CLASS_URNS[args.character_class].values())
+
+            # processor.find_effect_groupings()
+            # processor.relic_report(save_data.relics)
+            for build in reversed(
+                processor.top_builds(
+                    save_data.relics, urns, score_table=score_table
+                )
+            ):
+                print("")
+                print(f"=== SCORE: {build.score} ===")
+                processor.relic_report(build.relics)
+
+            print("")
+            print("Highest scores are listed last.  Scroll up and compare.")
+
+        else:
+            raise NotImplementedError()
+    else:
+        raise NotImplementedError()
     return 0
