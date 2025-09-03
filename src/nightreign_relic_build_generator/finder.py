@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass, field
 from enum import StrEnum, unique
 from functools import cached_property
+from heapq import nlargest
 from itertools import chain, permutations
 from typing import ClassVar, Generator, Sequence
 
@@ -196,16 +197,28 @@ EXECUTOR_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
 }
 
 
+@dataclass(frozen=True)
+class ScoredEffects:
+    effects: tuple[EffectInfo, ...]
+    score: int
+
+
+@dataclass(frozen=True)
+class Build(ScoredEffects):
+    relics: tuple[RelicData, ...]
+
+
 @dataclass
 class RelicProcessor:
     database: RelicDatabase
     score_table: dict[str, int]
 
-    def get_effect_score(self, effect_ids: Sequence[int]) -> int:
+    def get_scored_effects(self, effect_ids: Sequence[int]) -> ScoredEffects:
         # doesn't score things that don't stack
         # TODO: keep up with skill/imbue?  factor in class.
         total_score = 0
         seen: set[str] = set()
+        effects: list[EffectInfo] = []
         has_starting_imbue = False
         has_starting_skill = False
         for effect_id in effect_ids:
@@ -219,35 +232,66 @@ class RelicProcessor:
                 ):
                     has_starting_imbue |= info.is_starting_imbue
                     has_starting_skill |= info.is_starting_skill
+                    effects.append(info)
                     if score := self.score_table.get(info.name, 0):
                         total_score += score + info.level
-        return total_score
+        return ScoredEffects(effects=tuple(effects), score=total_score)
 
-    def get_relic_score(self, relic: RelicData) -> int:
-        return self.get_effect_score(relic.effect_ids)
+    def builds(
+        self,
+        relics: Sequence[RelicData],
+        urns: set[tuple[Color | None, Color | None, Color | None]],
+    ) -> Generator[Build, None, None]:
+        for combination in self.relic_permutations(relics, urns):
+            scored_effects = self.get_scored_effects(
+                [
+                    effect_id
+                    for relic in combination
+                    for effect_id in relic.effect_ids
+                ]
+            )
+            yield Build(
+                effects=scored_effects.effects,
+                score=scored_effects.score,
+                relics=combination,
+            )
+
+    def top_builds(
+        self,
+        relics: Sequence[RelicData],
+        urns: set[tuple[Color | None, Color | None, Color | None]],
+        *,
+        count: int = 50,
+    ) -> list[Build]:
+        # TODO: estimate
+        best = nlargest(
+            count,
+            (
+                (build.score, build)
+                for build in self.builds(relics=relics, urns=urns)
+            ),
+            key=lambda entry: entry[0],
+        )
+        return [entry[1] for entry in best]
 
     def relic_permutations(
         self,
         relics: Sequence[RelicData],
-        target_urns: dict[
-            str, tuple[Color | None, Color | None, Color | None]
-        ],
+        urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         minimum_per_relic: int = 1,
     ) -> Generator[tuple[RelicData, ...], None, None]:
         # first, score and prune out any relics that provide no value
-
-        pruned: list[RelicData] = []
-        for relic in relics:
-            score = self.get_relic_score(relic)
-            if score >= minimum_per_relic:
-                pruned.append(relic)
-
-        urn_color_set = set(target_urns.values())
-        print(f"Pruned: {len(pruned)}")
+        relics = [
+            relic
+            for relic in relics
+            if self.get_scored_effects(relic.effect_ids).score
+            >= minimum_per_relic
+        ]
+        print(f"Pruned Relics: {len(relics)}")
 
         for build in chain.from_iterable(
-            permutations(pruned, r) for r in range(1, min(3, len(pruned)) + 1)
+            permutations(relics, r) for r in range(1, min(3, len(relics)) + 1)
         ):
             missing_data = False
             build_colors: list[Color | None] = []
@@ -278,7 +322,7 @@ class RelicProcessor:
                 (None, None, build_colors[2]),
                 (None, None, None),
             }
-            if not possibilities.isdisjoint(urn_color_set):
+            if not possibilities.isdisjoint(urns):
                 yield build
 
     def relic_report(self, relics: Sequence[RelicData]) -> None:

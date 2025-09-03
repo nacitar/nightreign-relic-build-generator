@@ -125,6 +125,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="save slot index (0-9)",
         default=0,
     )
+    # TODO: minimum score per relic
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -153,26 +154,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     # processor.find_effect_groupings()
     processor.relic_report(save_data.relics)
     # return 0
-    count = 0
-    high_score = 0
-    for combination in processor.relic_permutations(
-        save_data.relics, (EXECUTOR_URNS | UNIVERSAL_URNS)
-    ):
-        score = processor.get_effect_score(
-            [
-                effect_id
-                for relic in combination
-                for effect_id in relic.effect_ids
-            ]
-        )
-        # NOTE: this can show duplicates with different relic orders..
-        # which can be good ONLY IF the imbue/skills change
-        if score >= high_score:
-            high_score = score
-            print("")
-            print(f"==== NEW BEST {score} {combination} ====")
-            processor.relic_report(combination)
-        count += 1
-    print(count)
+    urns = set((EXECUTOR_URNS | UNIVERSAL_URNS).values())  # TODO: from args
+    for build in reversed(processor.top_builds(save_data.relics, urns)):
+        print("")
+        print(f"=== SCORE: {build.score} ===")
+        processor.relic_report(build.relics)
 
+    print("")
+    print("Highest scores are listed last.  Scroll up and compare.")
     return 0
