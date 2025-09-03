@@ -199,7 +199,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"Listed {len(save_data.relics)} relics.")
         elif args.operation == "compute":
             if args.scores:
-                score_table = load_scores(args.scores)
+                score_table = load_scores(Path(args.scores))
             elif args.builtin_scores:
                 score_table = get_builtin_scores(args.builtin_scores)
 
