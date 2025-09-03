@@ -1087,6 +1087,10 @@
     "name": "Grand Luminous Scene",
     "color": "Yellow"
   },
+  "22180": {
+    "name": "Delicate Luminous Scene",
+    "color": "Yellow"
+  },
   "22181": {
     "name": "Polished Luminous Scene",
     "color": "Yellow"
@@ -1127,12 +1131,28 @@
     "name": "Polished Burning Scene",
     "color": "Red"
   },
+  "23061": {
+    "name": "Polished Drizzly Scene",
+    "color": "Blue"
+  },
   "23062": {
     "name": "Grand Drizzly Scene",
     "color": "Blue"
   },
   "23071": {
     "name": "Polished Drizzly Scene",
+    "color": "Blue"
+  },
+  "23072": {
+    "name": "Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "23081": {
+    "name": "Polished Drizzly Scene",
+    "color": "Blue"
+  },
+  "23082": {
+    "name": "Grand Drizzly Scene",
     "color": "Blue"
   },
   "23261": {

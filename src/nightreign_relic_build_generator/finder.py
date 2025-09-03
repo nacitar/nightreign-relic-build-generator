@@ -4,6 +4,7 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum, unique
+from functools import cached_property
 from itertools import chain, permutations
 from typing import ClassVar, Generator, Sequence
 
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 @unique
-class RelicColor(StrEnum):
+class Color(StrEnum):
     BLUE = "Blue"
     GREEN = "Green"
     RED = "Red"
@@ -23,13 +24,13 @@ class RelicColor(StrEnum):
     @property
     def alias(self) -> str:
         match self:
-            case RelicColor.BLUE:
+            case Color.BLUE:
                 return "Drizzly"
-            case RelicColor.GREEN:
+            case Color.GREEN:
                 return "Tranquil"
-            case RelicColor.RED:
+            case Color.RED:
                 return "Burning"
-            case RelicColor.YELLOW:
+            case Color.YELLOW:
                 return "Luminous"
         raise NotImplementedError()
 
@@ -37,7 +38,7 @@ class RelicColor(StrEnum):
 @dataclass(frozen=True)
 class RelicInfo:
     SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
-    color: RelicColor
+    color: Color
     size: int
 
     def __post_init__(self) -> None:
@@ -49,10 +50,52 @@ class RelicInfo:
         return f"{type(self).SIZE_NAMES[self.size-1]} {self.color.alias} Scene"
 
 
-@dataclass
+# TODO: cache/pool these
+@dataclass(frozen=True)
 class EffectInfo:
+    STACKABLE_REGEX: ClassVar[list[re.Pattern[str]]] = [
+        re.compile(
+            "^Improved .? (Attack Power|Resistance|Damage Negation|Incantations|Sorcery|Damage)( at (Low|Full) HP)?$"
+        ),
+        re.compile(
+            "^(Dexterity|Endurance|Faith|Intelligence|Mind|Poise|Strength|Vigor|Arcane)$"
+        ),
+        re.compile(
+            "^Improved (Guard Counters|Initial Standard Attack|Perfuming Arts|Roar & Breath Attacks|Stance-Breaking when .?)$"
+        ),
+        re.compile("^Boosts Attack Power of Added Affinity Attacks$"),
+        re.compile("^FP Restoration upon Successive Attacks$"),
+        re.compile(
+            "^(?!Stonesword Key).* in possession at start of expedition$"
+        ),  # NOT STONESWORD KEY
+        re.compile("^Character Skill Cooldown Reduction$"),
+        re.compile("^Increased rune acquisition for self and allies$"),
+        re.compile("^Ultimate Art Gauge$"),
+    ]
+    STARTING_IMBUE_REGEX: ClassVar[re.Pattern[str]] = re.compile(
+        "^Starting armament (deals|inflicts) .?$"
+    )
+    STARTING_SKILL_REGEX: ClassVar[re.Pattern[str]] = re.compile(
+        "^Changes compatible armament's skill to .?$"
+    )
+
     name: str
     level: int
+
+    @cached_property
+    def is_stackable(self) -> bool:
+        for pattern in type(self).STACKABLE_REGEX:
+            if pattern.match(self.name):
+                return True
+        return False
+
+    @cached_property
+    def is_starting_imbue(self) -> bool:
+        return bool(type(self).STARTING_IMBUE_REGEX.match(self.name))
+
+    @cached_property
+    def is_starting_skill(self) -> bool:
+        return bool(type(self).STARTING_SKILL_REGEX.match(self.name))
 
     def __post_init__(self) -> None:
         if self.level < 0:
@@ -83,7 +126,7 @@ class RelicDatabase:
         for item_id, attributes in item_data.items():
             color_str = attributes.get("color", "")
             try:
-                color = RelicColor[color_str.upper()]
+                color = Color[color_str.upper()]
             except KeyError:
                 logger.error(f'Skipping {item_id}: bad color "{color_str}"')
                 continue
@@ -122,37 +165,34 @@ class RelicDatabase:
         #    if attributes["color"]
 
 
-RAIDER_URNS: dict[
-    str, tuple[RelicColor | None, RelicColor | None, RelicColor | None]
-] = {
-    "Raider's Urn": (RelicColor.RED, RelicColor.GREEN, RelicColor.GREEN),
-    "Raider's Goblet": (RelicColor.RED, RelicColor.BLUE, RelicColor.YELLOW),
-    "Raider's Chalice": (RelicColor.RED, RelicColor.RED, None),
-    "Soot-Covered Raider's Urn": (
-        RelicColor.BLUE,
-        RelicColor.BLUE,
-        RelicColor.GREEN,
-    ),
-    "Sealed Raider's Urn": (
-        RelicColor.GREEN,
-        RelicColor.GREEN,
-        RelicColor.RED,
-    ),
-    "Sacred Erdtree Grail": (
-        RelicColor.YELLOW,
-        RelicColor.YELLOW,
-        RelicColor.YELLOW,
-    ),
-    "Spirit Shelter Grail": (
-        RelicColor.GREEN,
-        RelicColor.GREEN,
-        RelicColor.GREEN,
-    ),
-    "Giant's Cradle Grail": (
-        RelicColor.BLUE,
-        RelicColor.BLUE,
-        RelicColor.BLUE,
-    ),
+UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
+    "Sacred Erdtree Grail": (Color.YELLOW, Color.YELLOW, Color.YELLOW),
+    "Spirit Shelter Grail": (Color.GREEN, Color.GREEN, Color.GREEN),
+    "Giant's Cradle Grail": (Color.BLUE, Color.BLUE, Color.BLUE),
+}
+
+RAIDER_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
+    "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+    "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+    "Raider's Chalice": (Color.RED, Color.RED, None),
+    "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
+    "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
+}
+
+GUARDIAN_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
+    "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+    "Guardian's Goblet": (Color.BLUE, Color.BLUE, Color.GREEN),
+    "Guardian's Chalice": (Color.BLUE, Color.YELLOW, None),
+    "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+    "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+}
+
+EXECUTOR_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
+    "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+    "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
+    "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
+    "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
+    "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
 }
 
 
@@ -162,17 +202,25 @@ class RelicProcessor:
     score_table: dict[str, int]
 
     def get_effect_score(self, effect_ids: Sequence[int]) -> int:
-        # TODO: eliminate duplicates/incompatible things/doesn't stack/...
+        # doesn't score things that don't stack
+        # TODO: keep up with skill/imbue?  factor in class.
         total_score = 0
+        seen: set[str] = set()
+        has_starting_imbue = False
+        has_starting_skill = False
         for effect_id in effect_ids:
-            effect_info = self.database.effect_id_to_info.get(effect_id)
-            if not effect_info:
-                logger.warning(f"Skipping unknown effect: {effect_id}")
-                continue
-            effect_score = self.score_table.get(effect_info.name, 0)
-            if effect_score:
-                effect_score += effect_info.level
-            total_score += effect_score
+            info = self.database.effect_id_to_info.get(effect_id)
+            if info is None:
+                logger.warning(f"Unknown effect id: {effect_id}")
+            elif info.is_stackable or info.name not in seen:
+                seen.add(info.name)
+                if (not info.is_starting_imbue or not has_starting_imbue) and (
+                    not info.is_starting_skill or not has_starting_skill
+                ):
+                    has_starting_imbue |= info.is_starting_imbue
+                    has_starting_skill |= info.is_starting_skill
+                    if score := self.score_table.get(info.name, 0):
+                        total_score += score + info.level
         return total_score
 
     def get_relic_score(self, relic: RelicData) -> int:
@@ -182,7 +230,7 @@ class RelicProcessor:
         self,
         relics: Sequence[RelicData],
         target_urns: dict[
-            str, tuple[RelicColor | None, RelicColor | None, RelicColor | None]
+            str, tuple[Color | None, Color | None, Color | None]
         ],
         *,
         minimum_per_relic: int = 1,
@@ -202,7 +250,7 @@ class RelicProcessor:
             permutations(pruned, r) for r in range(1, min(3, len(pruned)) + 1)
         ):
             missing_data = False
-            build_colors: list[RelicColor | None] = []
+            build_colors: list[Color | None] = []
             for relic in build:
                 relic_info = self.database.relic_id_to_info.get(relic.item_id)
                 if not relic_info:
@@ -219,7 +267,7 @@ class RelicProcessor:
                 raise AssertionError()
 
             possibilities: set[
-                tuple[RelicColor | None, RelicColor | None, RelicColor | None]
+                tuple[Color | None, Color | None, Color | None]
             ] = {
                 (build_colors[0], build_colors[1], build_colors[2]),
                 (build_colors[0], build_colors[1], None),
@@ -252,4 +300,4 @@ class RelicProcessor:
                     print(f"- {effect_info}")
                 else:
                     print(f"- WARNING: couldn't find effect id {effect_id}")
-        print(f"==== Listed {count} relics. ====")
+        logger.info(f"Listed {count} relics.")

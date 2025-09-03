@@ -8,7 +8,12 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import RAIDER_URNS, RelicDatabase, RelicProcessor
+from .finder import (
+    EXECUTOR_URNS,
+    UNIVERSAL_URNS,
+    RelicDatabase,
+    RelicProcessor,
+)
 from .nightreign import load_save_file
 from .utility import get_resource_json
 
@@ -143,15 +148,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"- Relics: {len(save_data.relics)}")
     database = RelicDatabase()
     processor = RelicProcessor(
-        database, get_resource_json("test_settings.json")
+        database, get_resource_json("settings_executor.json")
     )
     # processor.find_effect_groupings()
     processor.relic_report(save_data.relics)
-
+    # return 0
     count = 0
     high_score = 0
     for combination in processor.relic_permutations(
-        save_data.relics, RAIDER_URNS
+        save_data.relics, (EXECUTOR_URNS | UNIVERSAL_URNS)
     ):
         score = processor.get_effect_score(
             [
@@ -160,9 +165,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for effect_id in relic.effect_ids
             ]
         )
-        if score > high_score:
+        # NOTE: this can show duplicates with different relic orders..
+        # which can be good ONLY IF the imbue/skills change
+        if score >= high_score:
             high_score = score
-            print(f"NEW BEST: {score} {combination}")
+            print("")
+            print(f"==== NEW BEST {score} {combination} ====")
             processor.relic_report(combination)
         count += 1
     print(count)
