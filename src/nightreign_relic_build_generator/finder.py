@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass, field
 from enum import StrEnum, unique
 from functools import cached_property
-from heapq import nlargest
+from heapq import heappush, heapreplace
 from itertools import chain, permutations
 from typing import ClassVar, Generator, Sequence
 
@@ -199,6 +199,48 @@ CLASS_URNS: dict[
 }
 
 
+@dataclass
+class BuildHeap:
+    """Best by score, deduping on (score, set[RelicData], set[EffectInfo]."""
+
+    max_size: int
+
+    @dataclass(order=True)
+    class _Entry:
+        score: int
+        build: Build = field(compare=False)
+
+    _Signature = tuple[int, frozenset[RelicData], frozenset[EffectInfo]]
+
+    _heap: list[_Entry] = field(default_factory=list, init=False, repr=False)
+    _signatures: set[_Signature] = field(
+        default_factory=set, init=False, repr=False
+    )
+
+    def _signature(self, build: Build) -> _Signature:
+        return (build.score, frozenset(build.relics), frozenset(build.effects))
+
+    def consider(self, build: Build) -> None:
+        sig = self._signature(build)
+        if sig in self._signatures:
+            return
+        entry = self._Entry(build.score, build)
+        if len(self._heap) < self.max_size:
+            heappush(self._heap, entry)
+            self._signatures.add(sig)
+            return
+        if build.score > self._heap[0].score:  # strictly better replaces
+            evicted = heapreplace(self._heap, entry)
+            self._signatures.discard(self._signature(evicted.build))
+            self._signatures.add(sig)
+
+    def results_desc(self) -> list[Build]:
+        return [
+            e.build
+            for e in sorted(self._heap, key=lambda e: e.score, reverse=True)
+        ]
+
+
 @dataclass(frozen=True)
 class ScoredEffects:
     effects: tuple[EffectInfo, ...]
@@ -269,18 +311,12 @@ class RelicProcessor:
         score_table: dict[str, int],
         count: int = 50,
     ) -> list[Build]:
-        # TODO: estimate how long it might take?
-        best = nlargest(
-            count,
-            (
-                (build.score, build)
-                for build in self.builds(
-                    relics=relics, urns=urns, score_table=score_table
-                )
-            ),
-            key=lambda entry: entry[0],
-        )
-        return [entry[1] for entry in best]
+        top = BuildHeap(count)
+        for build in self.builds(
+            relics=relics, urns=urns, score_table=score_table
+        ):
+            top.consider(build)
+        return top.results_desc()
 
     def relic_permutations(
         self,

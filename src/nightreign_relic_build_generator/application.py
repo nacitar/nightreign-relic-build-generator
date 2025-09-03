@@ -166,7 +166,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         required=True,
     )
 
-    # TODO: minimum score per relic
+    # TODO: minimum score per relic, minimum score overall, number to keep
     args = parser.parse_args(args=argv)
 
     configure_logging(

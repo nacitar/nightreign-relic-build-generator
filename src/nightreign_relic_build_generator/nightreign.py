@@ -82,7 +82,7 @@ class InventorySlotInfo:
 @dataclass(frozen=True)
 class RelicData:
     item_id: int
-    effect_ids: list[int]
+    effect_ids: tuple[int, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -161,14 +161,18 @@ class SaveData:
                         item_id=cast(
                             int, struct.unpack_from("<H", view, offset + 4)[0]
                         ),
-                        effect_ids=[
-                            effect_id
-                            for effect_id in cast(
-                                tuple[int, int, int],
-                                struct.unpack_from("<III", view, offset + 16),
-                            )
-                            if effect_id != type(self)._EMPTY_EFFECT_ID
-                        ],
+                        effect_ids=tuple(
+                            [
+                                effect_id
+                                for effect_id in cast(
+                                    tuple[int, int, int],
+                                    struct.unpack_from(
+                                        "<III", view, offset + 16
+                                    ),
+                                )
+                                if effect_id != type(self)._EMPTY_EFFECT_ID
+                            ]
+                        ),
                     )
                 )
             else:
