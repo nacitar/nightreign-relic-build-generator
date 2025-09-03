@@ -216,7 +216,7 @@ class RelicProcessor:
     def get_scored_effects(self, effect_ids: Sequence[int]) -> ScoredEffects:
         # doesn't score things that don't stack
         # TODO: keep up with skill/imbue?  factor in class.
-        total_score = 0
+        score = 0
         seen: set[str] = set()
         effects: list[EffectInfo] = []
         has_starting_imbue = False
@@ -233,9 +233,10 @@ class RelicProcessor:
                     has_starting_imbue |= info.is_starting_imbue
                     has_starting_skill |= info.is_starting_skill
                     effects.append(info)
-                    if score := self.score_table.get(info.name, 0):
-                        total_score += score + info.level
-        return ScoredEffects(effects=tuple(effects), score=total_score)
+                    score += self.score_table.get(info.name, 0) * (
+                        info.level + 1
+                    )
+        return ScoredEffects(effects=tuple(effects), score=score)
 
     def builds(
         self,
@@ -263,7 +264,7 @@ class RelicProcessor:
         *,
         count: int = 50,
     ) -> list[Build]:
-        # TODO: estimate
+        # TODO: estimate how long it might take?
         best = nlargest(
             count,
             (
@@ -289,6 +290,7 @@ class RelicProcessor:
             >= minimum_per_relic
         ]
         print(f"Pruned Relics: {len(relics)}")
+        # TODO: calculate number of combinations?  progress bar?
 
         for build in chain.from_iterable(
             permutations(relics, r) for r in range(1, min(3, len(relics)) + 1)
