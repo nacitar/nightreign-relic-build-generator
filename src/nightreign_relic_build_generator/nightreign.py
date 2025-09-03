@@ -162,16 +162,12 @@ class SaveData:
                             int, struct.unpack_from("<H", view, offset + 4)[0]
                         ),
                         effect_ids=tuple(
-                            [
-                                effect_id
-                                for effect_id in cast(
-                                    tuple[int, int, int],
-                                    struct.unpack_from(
-                                        "<III", view, offset + 16
-                                    ),
-                                )
-                                if effect_id != type(self)._EMPTY_EFFECT_ID
-                            ]
+                            effect_id
+                            for effect_id in cast(
+                                tuple[int, int, int],
+                                struct.unpack_from("<III", view, offset + 16),
+                            )
+                            if effect_id != type(self)._EMPTY_EFFECT_ID
                         ),
                     )
                 )
