@@ -8,8 +8,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import CLASS_URNS, UNIVERSAL_URNS, get_top_builds, relic_report
-from .nightreign import Database, load_save_file
+from .finder import CLASS_URNS, UNIVERSAL_URNS, get_top_builds
+from .nightreign import Database, Relic, load_save_file
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -215,42 +215,65 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
+
         database = Database()
-        relics = [
-            database.get_relic(relic_data) for relic_data in save_data.relics
-        ]
+        relics: list[Relic] = []
+        incomplete_relics: list[Relic] = []
+        for relic_data in save_data.relics:
+            relic = database.get_relic(relic_data)
+            if relic.is_incomplete:
+                incomplete_relics.append(relic)
+            else:
+                relics.append(relic)
+        logger.info(f"Loaded {len(relics)} complete relics.")
+        if incomplete_relics:
+            logger.warning(
+                f"Excluded {len(incomplete_relics)} incomplete relics"
+                '; run "dump-relics" operation to see them.'
+            )
         if args.operation == "dump-relics":
-            relic_report(relics)
-            print("")
-            print(f"Listed {len(relics)} relics.")
-        elif args.operation == "compute":
-            if args.scores:
-                score_table = load_scores(Path(args.scores))
-            elif args.builtin_scores:
-                score_table = get_builtin_scores(args.builtin_scores)
-
-            urns = set(UNIVERSAL_URNS.values())
-            if args.character_class != "universal":
-                urns.update(CLASS_URNS[args.character_class].values())
-
-            for build in reversed(
-                get_top_builds(
-                    relics,
-                    urns,
-                    score_table=score_table,
-                    count=args.limit,
-                    prune=args.prune,
-                )
-            ):
+            print("COMPLETE RELICS:")
+            for relic in relics:
+                print(relic)
+            if incomplete_relics:
                 print("")
-                print(f"=== SCORE: {build.score} ===")
-                relic_report(build.relics)
-
+                print("INCOMPLETE RELICS:")
+                for relic in incomplete_relics:
+                    print(relic)
             print("")
-            print(f"TOP {args.limit} scores, listed in reverse order.")
-
+            print(
+                f"Listed {len(relics)} complete and {len(incomplete_relics)}"
+                " incomplete relics."
+            )
         else:
-            raise NotImplementedError()
+            incomplete_relics.clear()  # free this memory
+            if args.operation == "compute":
+                if args.scores:
+                    score_table = load_scores(Path(args.scores))
+                elif args.builtin_scores:
+                    score_table = get_builtin_scores(args.builtin_scores)
+
+                urns = set(UNIVERSAL_URNS.values())
+                if args.character_class != "universal":
+                    urns.update(CLASS_URNS[args.character_class].values())
+
+                for build in reversed(
+                    get_top_builds(
+                        relics,
+                        urns,
+                        score_table=score_table,
+                        count=args.limit,
+                        prune=args.prune,
+                    )
+                ):
+                    print("")
+                    print(build)
+
+                print("")
+                print(f"TOP {args.limit} scores, listed in reverse order.")
+
+            else:
+                raise NotImplementedError()
     else:
         raise NotImplementedError()
     return 0

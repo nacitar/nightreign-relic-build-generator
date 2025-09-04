@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass, field
 from heapq import heappush, heapreplace
 from itertools import chain, permutations
@@ -99,6 +100,13 @@ class ScoredEffects:
 @dataclass(frozen=True)
 class Build(ScoredEffects):
     relics: tuple[Relic, ...]
+
+    def __str__(self) -> str:
+        lines: list[str] = []
+        lines.append(f"SCORE: {self.score}")
+        for relic in self.relics:
+            lines.append(str(relic))
+        return os.linesep.join(lines)
 
 
 def get_scored_effects(
@@ -200,11 +208,3 @@ def get_top_builds(
     ):
         top.consider(build)
     return top.results_desc()
-
-
-def relic_report(relics: Sequence[Relic]) -> None:
-    for relic in relics:
-        print(f"[{relic.color}] {relic.name}")
-        for effect in relic.effects:
-            print(f"- {effect}")
-    logger.info(f"Listed {len(relics)} relics.")

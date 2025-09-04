@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 import struct
 from dataclasses import dataclass, field
@@ -213,6 +214,7 @@ class Color(StrEnum):
     GREEN = "Green"
     RED = "Red"
     YELLOW = "Yellow"
+    UNKNOWN = "UNKNOWN"
 
     @property
     def alias(self) -> str:
@@ -225,6 +227,8 @@ class Color(StrEnum):
                 return "Burning"
             case Color.YELLOW:
                 return "Luminous"
+            case Color.UNKNOWN:
+                return "UNKNOWN"
         raise NotImplementedError()
 
 
@@ -244,10 +248,24 @@ class Effect:
 
 @dataclass(frozen=True)
 class Relic:
+    UNKNOWN_PREFIX: ClassVar[str] = "UNKNOWN_ID_"
     color: Color
     size: int
     name: str
     effects: tuple[Effect, ...]
+
+    @property
+    def is_incomplete(self) -> bool:
+        return self.name.startswith(type(self).UNKNOWN_PREFIX) or any(
+            effect.name.startswith(type(self).UNKNOWN_PREFIX)
+            for effect in self.effects
+        )
+
+    def __str__(self) -> str:
+        lines: list[str] = [f"[{self.color}] {self.name}"]
+        for effect in self.effects:
+            lines.append(f"- {effect}")
+        return os.linesep.join(lines)
 
 
 @dataclass
@@ -339,7 +357,13 @@ class Database:
     def get_effect(self, id: int) -> Effect:
         info = self.effect_id_to_info.get(id)
         if not info:
-            raise ValueError(f"database has no effect with id: {id}")
+            return Effect(
+                name=f"{Relic.UNKNOWN_PREFIX}EFFECT:{id}",
+                level=0,
+                is_stackable=False,
+                is_starting_imbue=False,
+                is_starting_skill=False,
+            )
         return Effect(
             name=info.name,
             level=info.level,
@@ -358,14 +382,19 @@ class Database:
     def get_relic(self, data: RelicData) -> Relic:
         info = self.relic_id_to_info.get(data.item_id)
         if not info:
-            raise ValueError(f"database has no relic with id {data.item_id}")
+            return Relic(
+                color=Color.UNKNOWN,
+                size=len(data.effect_ids),
+                name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
+                effects=tuple(self.get_effect(id) for id in data.effect_ids),
+            )
         if info.size != len(data.effect_ids):
-            raise ValueError(
+            raise AssertionError(
                 f"relic id {data.item_id} is size {info.size} but has"
                 f" {len(data.effect_ids)} effects."
             )
         if info.size not in range(1, len(type(self).SIZE_NAMES) + 1):
-            raise ValueError(
+            raise AssertionError(
                 f"database has invalid size {info.size}"
                 f" for relic id {data.item_id}"
             )
