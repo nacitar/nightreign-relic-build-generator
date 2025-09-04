@@ -56,13 +56,48 @@ class RelicInfo:
 class EffectInfo:
     STACKABLE_REGEX: ClassVar[list[re.Pattern[str]]] = [
         re.compile(
-            "^Improved (.+ )?(Attack Power|Resistance|Damage Negation|Incantations|Sorcery|Damage)( at (Low|Full) HP)?$"
+            "^Improved (.+ )?("
+            + "|".join(
+                [
+                    "Attack Power",
+                    "Resistance",
+                    "Damage Negation",
+                    "Incantations",
+                    "Sorcery",
+                    "Damage",
+                ]
+            )
+            + ")( at (Low|Full) HP)?$"
         ),
         re.compile(
-            "^(Dexterity|Endurance|Faith|Intelligence|Mind|Poise|Strength|Vigor|Arcane)$"
+            "^("
+            + "|".join(
+                [
+                    "Dexterity",
+                    "Endurance",
+                    "Faith",
+                    "Intelligence",
+                    "Mind",
+                    "Poise",
+                    "Strength",
+                    "Vigor",
+                    "Arcane",
+                ]
+            )
+            + ")$"
         ),
         re.compile(
-            "^Improved (Guard Counters|Initial Standard Attack|Perfuming Arts|Roar & Breath Attacks|Stance-Breaking when .+)$"
+            "^Improved ("
+            + "|".join(
+                [
+                    "Guard Counters",
+                    "Initial Standard Attack",
+                    "Perfuming Arts",
+                    "Roar & Breath Attacks",
+                    "Stance-Breaking when .+",
+                ]
+            )
+            + ")$"
         ),
         re.compile("^Boosts Attack Power of Added Affinity Attacks$"),
         re.compile("^FP Restoration upon Successive Attacks$"),
@@ -285,9 +320,10 @@ class RelicProcessor:
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
+        prune: int,
     ) -> Generator[Build, None, None]:
         for combination in self.relic_permutations(
-            relics, urns, score_table=score_table
+            relics, urns, score_table=score_table, prune=prune
         ):
             scored_effects = self.get_scored_effects(
                 [
@@ -309,11 +345,12 @@ class RelicProcessor:
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
-        count: int = 50,
+        count: int,
+        prune: int,
     ) -> list[Build]:
         top = BuildHeap(count)
         for build in self.builds(
-            relics=relics, urns=urns, score_table=score_table
+            relics=relics, urns=urns, score_table=score_table, prune=prune
         ):
             top.consider(build)
         return top.results_desc()
@@ -324,7 +361,7 @@ class RelicProcessor:
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
-        minimum_per_relic: int = 1,
+        prune: int,
     ) -> Generator[tuple[RelicData, ...], None, None]:
         # first, score and prune out any relics that provide no value
         relics = [
@@ -333,9 +370,9 @@ class RelicProcessor:
             if self.get_scored_effects(
                 relic.effect_ids, score_table=score_table
             ).score
-            >= minimum_per_relic
+            >= prune
         ]
-        print(f"Pruned Relics: {len(relics)}")
+        logger.info(f"Relics left after pruning: {len(relics)}")
         # TODO: calculate number of combinations?  progress bar?
 
         for build in chain.from_iterable(

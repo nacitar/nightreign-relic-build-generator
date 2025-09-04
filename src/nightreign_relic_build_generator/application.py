@@ -81,7 +81,12 @@ def configure_logging(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Does something.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Determines the best combinations of relics according to"
+            " user-provided scores."
+        )
+    )
     log_group = parser.add_argument_group("logging")
     log_group.add_argument(
         "--log-file",
@@ -165,8 +170,27 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=tuple(CLASS_URNS.keys()) + ("universal",),
         required=True,
     )
+    compute_parser.add_argument(
+        "-l",
+        "--limit",
+        metavar="COUNT",
+        help="The number of highest-scoring results to provide.",
+        type=int,
+        default=50,
+    )
+    compute_parser.add_argument(
+        "-p",
+        "--prune",
+        metavar="SCORE",
+        help=(
+            "The minimum value that the effects of a relic must score in"
+            " order for that relic to be considered in selection."
+        ),
+        type=int,
+        default=1,
+    )
 
-    # TODO: minimum score per relic, minimum score overall, number to keep
+    # TODO: minimum score overall
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -207,11 +231,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.character_class != "universal":
                 urns.update(CLASS_URNS[args.character_class].values())
 
-            # processor.find_effect_groupings()
-            # processor.relic_report(save_data.relics)
             for build in reversed(
                 processor.top_builds(
-                    save_data.relics, urns, score_table=score_table
+                    save_data.relics,
+                    urns,
+                    score_table=score_table,
+                    count=args.limit,
+                    prune=args.prune,
                 )
             ):
                 print("")
@@ -219,7 +245,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 processor.relic_report(build.relics)
 
             print("")
-            print("Highest scores are listed last.  Scroll up and compare.")
+            print(f"TOP {args.limit} scores, listed in reverse order.")
 
         else:
             raise NotImplementedError()
