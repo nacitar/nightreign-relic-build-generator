@@ -36,23 +36,6 @@ class Color(StrEnum):
 
 
 @dataclass(frozen=True)
-class RelicInfo:
-    color: Color
-    size: int
-
-
-# TODO: cache/pool these
-@dataclass(frozen=True)
-class EffectInfo:
-    name: str
-    level: int
-
-    def __post_init__(self) -> None:
-        if self.level < 0:
-            raise AssertionError("Level is negative: {self.level}")
-
-
-@dataclass(frozen=True)
 class Effect:
     name: str
     level: int
@@ -72,6 +55,22 @@ class Relic:
     size: int
     name: str
     effects: tuple[Effect, ...]
+
+
+@dataclass(frozen=True)
+class RelicMetadata:
+    color: Color
+    size: int
+
+
+@dataclass(frozen=True)
+class EffectMetadata:
+    name: str
+    level: int
+
+    def __post_init__(self) -> None:
+        if self.level < 0:
+            raise AssertionError(f"Level is negative: {self.level}")
 
 
 @dataclass
@@ -138,11 +137,11 @@ class RelicDatabase:
     )
 
     SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
-    relic_id_to_info: dict[int, RelicInfo] = field(
+    relic_id_to_info: dict[int, RelicMetadata] = field(
         init=False, default_factory=dict
     )
     relic_names: dict[int, str] = field(init=False, default_factory=dict)
-    effect_id_to_info: dict[int, EffectInfo] = field(
+    effect_id_to_info: dict[int, EffectMetadata] = field(
         init=False, default_factory=dict
     )
 
@@ -235,8 +234,9 @@ class RelicDatabase:
                     "Besmirched Frame": 2,
                 }.get(name, 3)
                 logger.debug(f"Assuming {item_id} has {size} effects: {name}")
-            relic_info = RelicInfo(color=color, size=size)
-            self.relic_id_to_info[int(item_id)] = relic_info
+            self.relic_id_to_info[int(item_id)] = RelicMetadata(
+                color=color, size=size
+            )
 
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
         for effect_id, attributes in effect_data.items():
@@ -246,7 +246,7 @@ class RelicDatabase:
                 level = int(match.group("level"))
                 name = name[: match.start()]
 
-            effect_info = EffectInfo(name, level)
+            effect_info = EffectMetadata(name, level)
             self.effect_id_to_info[int(effect_id)] = effect_info
             logger.debug(f"Added effect: {effect_id} {effect_info}")
 
@@ -289,7 +289,7 @@ CLASS_URNS: dict[
 
 @dataclass
 class BuildHeap:
-    """Best by score, deduping on (score, set[RelicData], set[EffectInfo]."""
+    """Best by score, deduping on (score, set[Relic], set[Effect]."""
 
     max_size: int
 
@@ -306,7 +306,11 @@ class BuildHeap:
     )
 
     def _signature(self, build: Build) -> _Signature:
-        return (build.score, frozenset(build.relics), frozenset(build.effects))
+        return (
+            build.score,
+            frozenset(build.relics),
+            frozenset(build.active_effects),
+        )
 
     def consider(self, build: Build) -> None:
         sig = self._signature(build)
@@ -331,7 +335,7 @@ class BuildHeap:
 
 @dataclass(frozen=True)
 class ScoredEffects:
-    effects: tuple[Effect, ...]
+    active_effects: tuple[Effect, ...]
     score: int
 
 
@@ -364,7 +368,7 @@ class RelicProcessor:
                     score += score_table.get(effect.name, 0) * (
                         effect.level + 1
                     )
-        return ScoredEffects(effects=tuple(active), score=score)
+        return ScoredEffects(active_effects=tuple(active), score=score)
 
     def builds(
         self,
@@ -382,7 +386,7 @@ class RelicProcessor:
                 score_table=score_table,
             )
             yield Build(
-                effects=scored_effects.effects,
+                active_effects=scored_effects.active_effects,
                 score=scored_effects.score,
                 relics=combination,
             )
