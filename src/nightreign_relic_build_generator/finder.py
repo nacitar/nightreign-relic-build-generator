@@ -56,7 +56,6 @@ class EffectInfo:
 class Effect:
     name: str
     level: int
-    id: int
     is_stackable: bool
     is_starting_imbue: bool
     is_starting_skill: bool
@@ -73,7 +72,6 @@ class Relic:
     size: int
     name: str
     effects: tuple[Effect, ...]
-    id: int
 
 
 @dataclass
@@ -155,7 +153,6 @@ class RelicDatabase:
         return Effect(
             name=info.name,
             level=info.level,
-            id=id,
             is_stackable=any(
                 pattern.match(info.name)
                 for pattern in type(self).STACKABLE_REGEX
@@ -199,7 +196,6 @@ class RelicDatabase:
             size=info.size,
             name=self.relic_names.get(data.item_id, standard_name),
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
-            id=data.item_id,
         )
 
     def load_from_save_editor(self) -> None:
@@ -431,14 +427,8 @@ class RelicProcessor:
             permutations(relics, r) for r in range(1, min(3, len(relics)) + 1)
         ):
             missing_data = False
-            build_colors: list[Color | None] = []
-            for relic in build:
-                relic_info = self.database.relic_id_to_info.get(relic.id)
-                if not relic_info:
-                    logger.error(f"Missing info for relic: {relic.id}")
-                    missing_data = True
-                    break
-                build_colors.append(relic_info.color)
+            build_colors: list[Color | None] = [relic.color for relic in build]
+
             if missing_data:
                 continue
             while len(build_colors) < 3:
@@ -464,7 +454,7 @@ class RelicProcessor:
 
     def relic_report(self, relics: Sequence[Relic]) -> None:
         for relic in relics:
-            print(f"RELIC {relic.id}: [{relic.color}] {relic.name}")
+            print(f"[{relic.color}] {relic.name}")
             for effect in relic.effects:
                 print(f"- {effect}")
         logger.info(f"Listed {len(relics)} relics.")
