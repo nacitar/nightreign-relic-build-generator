@@ -8,8 +8,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import CLASS_URNS, UNIVERSAL_URNS, RelicDatabase, RelicProcessor
-from .nightreign import load_save_file
+from .finder import CLASS_URNS, UNIVERSAL_URNS, RelicProcessor
+from .nightreign import Database, load_save_file
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -215,8 +215,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
-        database = RelicDatabase()
-        processor = RelicProcessor(database)
+        database = Database()
+        processor = RelicProcessor()
         relics = [
             database.get_relic(relic_data) for relic_data in save_data.relics
         ]
