@@ -4,7 +4,6 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import StrEnum, unique
-from functools import cached_property
 from heapq import heappush, heapreplace
 from itertools import chain, permutations
 from typing import ClassVar, Generator, Sequence
@@ -38,22 +37,47 @@ class Color(StrEnum):
 
 @dataclass(frozen=True)
 class RelicInfo:
-    SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
     color: Color
     size: int
-
-    def __post_init__(self) -> None:
-        if self.size < 1 or self.size > len(type(self).SIZE_NAMES):
-            raise AssertionError(f"Invalid relic size: {self.size}")
-
-    @property
-    def standard_name(self) -> str:
-        return f"{type(self).SIZE_NAMES[self.size-1]} {self.color.alias} Scene"
 
 
 # TODO: cache/pool these
 @dataclass(frozen=True)
 class EffectInfo:
+    name: str
+    level: int
+
+    def __post_init__(self) -> None:
+        if self.level < 0:
+            raise AssertionError("Level is negative: {self.level}")
+
+
+@dataclass(frozen=True)
+class Effect:
+    name: str
+    level: int
+    id: int
+    is_stackable: bool
+    is_starting_imbue: bool
+    is_starting_skill: bool
+
+    def __str__(self) -> str:
+        if not self.level:
+            return self.name
+        return f"{self.name} +{self.level}"
+
+
+@dataclass(frozen=True)
+class Relic:
+    color: Color
+    size: int
+    name: str
+    effects: tuple[Effect, ...]
+    id: int
+
+
+@dataclass
+class RelicDatabase:
     STACKABLE_REGEX: ClassVar[list[re.Pattern[str]]] = [
         re.compile(
             "^Improved (.+ )?("
@@ -115,36 +139,7 @@ class EffectInfo:
         "^Changes compatible armament's skill to .+$"
     )
 
-    name: str
-    level: int
-
-    @cached_property
-    def is_stackable(self) -> bool:
-        for pattern in type(self).STACKABLE_REGEX:
-            if pattern.match(self.name):
-                return True
-        return False
-
-    @cached_property
-    def is_starting_imbue(self) -> bool:
-        return bool(type(self).STARTING_IMBUE_REGEX.match(self.name))
-
-    @cached_property
-    def is_starting_skill(self) -> bool:
-        return bool(type(self).STARTING_SKILL_REGEX.match(self.name))
-
-    def __post_init__(self) -> None:
-        if self.level < 0:
-            raise AssertionError("Level is negative: {self.level}")
-
-    def __str__(self) -> str:
-        if not self.level:
-            return self.name
-        return f"{self.name} +{self.level}"
-
-
-@dataclass
-class RelicDatabase:
+    SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
     relic_id_to_info: dict[int, RelicInfo] = field(
         init=False, default_factory=dict
     )
@@ -152,6 +147,60 @@ class RelicDatabase:
     effect_id_to_info: dict[int, EffectInfo] = field(
         init=False, default_factory=dict
     )
+
+    def get_effect(self, id: int) -> Effect:
+        info = self.effect_id_to_info.get(id)
+        if not info:
+            raise ValueError(f"database has no effect with id: {id}")
+        return Effect(
+            name=info.name,
+            level=info.level,
+            id=id,
+            is_stackable=any(
+                pattern.match(info.name)
+                for pattern in type(self).STACKABLE_REGEX
+            ),
+            is_starting_imbue=bool(
+                type(self).STARTING_IMBUE_REGEX.match(info.name)
+            ),
+            is_starting_skill=bool(
+                type(self).STARTING_SKILL_REGEX.match(info.name)
+            ),
+        )
+
+    def get_relic(self, data: RelicData) -> Relic:
+        info = self.relic_id_to_info.get(data.item_id)
+        if not info:
+            raise ValueError(f"database has no relic with id {data.item_id}")
+        if info.size != len(data.effect_ids):
+            raise ValueError(
+                f"relic id {data.item_id} is size {info.size} but has"
+                f" {len(data.effect_ids)} effects."
+            )
+        if info.size not in range(1, len(type(self).SIZE_NAMES) + 1):
+            raise ValueError(
+                f"database has invalid size {info.size}"
+                f" for relic id {data.item_id}"
+            )
+
+        standard_name = " ".join(
+            [type(self).SIZE_NAMES[info.size - 1], info.color.alias, "Scene"]
+        )
+        name = self.relic_names.get(data.item_id)
+        if not name:
+            name = standard_name
+        elif name != standard_name:
+            logger.debug(
+                f"database has non-standard name for relic id"
+                f" {data.item_id}: {name}"
+            )
+        return Relic(
+            color=info.color,
+            size=info.size,
+            name=self.relic_names.get(data.item_id, standard_name),
+            effects=tuple(self.get_effect(id) for id in data.effect_ids),
+            id=data.item_id,
+        )
 
     def load_from_save_editor(self) -> None:
         effect_data: dict[str, dict[str, str]] = get_resource_json(
@@ -172,15 +221,26 @@ class RelicDatabase:
                 logger.error(f"Skipping {item_id}: no name provided")
                 continue
             try:
-                size = RelicInfo.SIZE_NAMES.index(name.split(" ", 1)[0]) + 1
+                size = type(self).SIZE_NAMES.index(name.split(" ", 1)[0]) + 1
             except ValueError:
-                size = 3
+                size = {
+                    "Torn Braided Cord": 2,
+                    "Old Pocketwatch": 2,
+                    "Small Makeup Brush": 2,
+                    "Slate Whetstone": 2,
+                    "Golden Dew": 2,
+                    "Night of the Beast": 2,
+                    "Vestige of Night": 2,
+                    "Blessed Flowers": 2,
+                    "Stone Stake": 2,
+                    "Cracked Sealing Wax": 2,
+                    "Third Volume": 2,
+                    "Crown Medal": 2,
+                    "Besmirched Frame": 2,
+                }.get(name, 3)
                 logger.debug(f"Assuming {item_id} has {size} effects: {name}")
             relic_info = RelicInfo(color=color, size=size)
             self.relic_id_to_info[int(item_id)] = relic_info
-            if relic_info.standard_name != name:
-                self.relic_names[int(item_id)] = name
-                logger.debug(f"Non-standard name: {name}")
 
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
         for effect_id, attributes in effect_data.items():
@@ -196,9 +256,6 @@ class RelicDatabase:
 
     def __post_init__(self) -> None:
         self.load_from_save_editor()
-
-        # for effect_id, attributes in self.effect_data.items():
-        #    if attributes["color"]
 
 
 UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
@@ -245,7 +302,7 @@ class BuildHeap:
         score: int
         build: Build = field(compare=False)
 
-    _Signature = tuple[int, frozenset[RelicData], frozenset[EffectInfo]]
+    _Signature = tuple[int, frozenset[Relic], frozenset[Effect]]
 
     _heap: list[_Entry] = field(default_factory=list, init=False, repr=False)
     _signatures: set[_Signature] = field(
@@ -278,13 +335,13 @@ class BuildHeap:
 
 @dataclass(frozen=True)
 class ScoredEffects:
-    effects: tuple[EffectInfo, ...]
+    effects: tuple[Effect, ...]
     score: int
 
 
 @dataclass(frozen=True)
 class Build(ScoredEffects):
-    relics: tuple[RelicData, ...]
+    relics: tuple[Relic, ...]
 
 
 @dataclass
@@ -292,31 +349,30 @@ class RelicProcessor:
     database: RelicDatabase
 
     def get_scored_effects(
-        self, effect_ids: Sequence[int], *, score_table: dict[str, int]
+        self, effects: Sequence[Effect], *, score_table: dict[str, int]
     ) -> ScoredEffects:
         score = 0
         seen: set[str] = set()
-        effects: list[EffectInfo] = []
+        active: list[Effect] = []
         has_starting_imbue = False
         has_starting_skill = False
-        for effect_id in effect_ids:
-            info = self.database.effect_id_to_info.get(effect_id)
-            if info is None:
-                logger.warning(f"Unknown effect id: {effect_id}")
-            elif info.is_stackable or info.name not in seen:
-                seen.add(info.name)
-                if (not info.is_starting_imbue or not has_starting_imbue) and (
-                    not info.is_starting_skill or not has_starting_skill
-                ):
-                    has_starting_imbue |= info.is_starting_imbue
-                    has_starting_skill |= info.is_starting_skill
-                    effects.append(info)
-                    score += score_table.get(info.name, 0) * (info.level + 1)
-        return ScoredEffects(effects=tuple(effects), score=score)
+        for effect in effects:
+            if effect.is_stackable or effect.name not in seen:
+                seen.add(effect.name)
+                if (
+                    not effect.is_starting_imbue or not has_starting_imbue
+                ) and (not effect.is_starting_skill or not has_starting_skill):
+                    has_starting_imbue |= effect.is_starting_imbue
+                    has_starting_skill |= effect.is_starting_skill
+                    active.append(effect)
+                    score += score_table.get(effect.name, 0) * (
+                        effect.level + 1
+                    )
+        return ScoredEffects(effects=tuple(active), score=score)
 
     def builds(
         self,
-        relics: Sequence[RelicData],
+        relics: Sequence[Relic],
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
@@ -326,11 +382,7 @@ class RelicProcessor:
             relics, urns, score_table=score_table, prune=prune
         ):
             scored_effects = self.get_scored_effects(
-                [
-                    effect_id
-                    for relic in combination
-                    for effect_id in relic.effect_ids
-                ],
+                [effect for relic in combination for effect in relic.effects],
                 score_table=score_table,
             )
             yield Build(
@@ -341,7 +393,7 @@ class RelicProcessor:
 
     def top_builds(
         self,
-        relics: Sequence[RelicData],
+        relics: Sequence[Relic],
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
@@ -357,18 +409,18 @@ class RelicProcessor:
 
     def relic_permutations(
         self,
-        relics: Sequence[RelicData],
+        relics: Sequence[Relic],
         urns: set[tuple[Color | None, Color | None, Color | None]],
         *,
         score_table: dict[str, int],
         prune: int,
-    ) -> Generator[tuple[RelicData, ...], None, None]:
+    ) -> Generator[tuple[Relic, ...], None, None]:
         # first, score and prune out any relics that provide no value
         relics = [
             relic
             for relic in relics
             if self.get_scored_effects(
-                relic.effect_ids, score_table=score_table
+                relic.effects, score_table=score_table
             ).score
             >= prune
         ]
@@ -381,9 +433,9 @@ class RelicProcessor:
             missing_data = False
             build_colors: list[Color | None] = []
             for relic in build:
-                relic_info = self.database.relic_id_to_info.get(relic.item_id)
+                relic_info = self.database.relic_id_to_info.get(relic.id)
                 if not relic_info:
-                    logger.error(f"Missing info for relic: {relic.item_id}")
+                    logger.error(f"Missing info for relic: {relic.id}")
                     missing_data = True
                     break
                 build_colors.append(relic_info.color)
@@ -410,23 +462,9 @@ class RelicProcessor:
             if not possibilities.isdisjoint(urns):
                 yield build
 
-    def relic_report(self, relics: Sequence[RelicData]) -> None:
-        count = 0
+    def relic_report(self, relics: Sequence[Relic]) -> None:
         for relic in relics:
-            count += 1
-            relic_info = self.database.relic_id_to_info.get(relic.item_id)
-            if relic_info:
-                name = self.database.relic_names.get(relic.item_id)
-                if not name:
-                    name = relic_info.standard_name
-                print(f"RELIC {relic.item_id}: [{relic_info.color}] {name}")
-            else:
-                print(f"MISSING RELIC: couldn't find id {relic.item_id}")
-
-            for effect_id in relic.effect_ids:
-                effect_info = self.database.effect_id_to_info.get(effect_id)
-                if effect_info:
-                    print(f"- {effect_info}")
-                else:
-                    print(f"- WARNING: couldn't find effect id {effect_id}")
-        logger.info(f"Listed {count} relics.")
+            print(f"RELIC {relic.id}: [{relic.color}] {relic.name}")
+            for effect in relic.effects:
+                print(f"- {effect}")
+        logger.info(f"Listed {len(relics)} relics.")

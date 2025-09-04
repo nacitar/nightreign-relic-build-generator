@@ -217,10 +217,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
         database = RelicDatabase()
         processor = RelicProcessor(database)
+        relics = [
+            database.get_relic(relic_data) for relic_data in save_data.relics
+        ]
         if args.operation == "dump-relics":
-            processor.relic_report(save_data.relics)
+            processor.relic_report(relics)
             print("")
-            print(f"Listed {len(save_data.relics)} relics.")
+            print(f"Listed {len(relics)} relics.")
         elif args.operation == "compute":
             if args.scores:
                 score_table = load_scores(Path(args.scores))
@@ -233,7 +236,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
             for build in reversed(
                 processor.top_builds(
-                    save_data.relics,
+                    relics,
                     urns,
                     score_table=score_table,
                     count=args.limit,
