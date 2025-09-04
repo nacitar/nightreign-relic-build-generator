@@ -8,7 +8,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import CLASS_URNS, UNIVERSAL_URNS, RelicProcessor
+from .finder import CLASS_URNS, UNIVERSAL_URNS, get_top_builds, relic_report
 from .nightreign import Database, load_save_file
 from .utility import (
     get_builtin_scores,
@@ -216,12 +216,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
         database = Database()
-        processor = RelicProcessor()
         relics = [
             database.get_relic(relic_data) for relic_data in save_data.relics
         ]
         if args.operation == "dump-relics":
-            processor.relic_report(relics)
+            relic_report(relics)
             print("")
             print(f"Listed {len(relics)} relics.")
         elif args.operation == "compute":
@@ -235,7 +234,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 urns.update(CLASS_URNS[args.character_class].values())
 
             for build in reversed(
-                processor.top_builds(
+                get_top_builds(
                     relics,
                     urns,
                     score_table=score_table,
@@ -245,7 +244,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             ):
                 print("")
                 print(f"=== SCORE: {build.score} ===")
-                processor.relic_report(build.relics)
+                relic_report(build.relics)
 
             print("")
             print(f"TOP {args.limit} scores, listed in reverse order.")
