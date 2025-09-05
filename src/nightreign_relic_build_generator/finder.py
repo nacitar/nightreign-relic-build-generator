@@ -80,20 +80,28 @@ def get_scored_effects(
     effects: Sequence[Effect], *, score_table: dict[str, int]
 ) -> ScoredEffects:
     score = 0
-    seen: set[str] = set()
+    seen: set[tuple[str, int]] = set()
     active: list[Effect] = []
     has_starting_imbue = False
     has_starting_skill = False
     for effect in effects:
-        if effect.is_stackable or effect.name not in seen:
-            seen.add(effect.name)
+        seen_key = (effect.name, effect.level)
+        if effect.is_stackable or seen_key not in seen:
+            seen.add(seen_key)
             if (not effect.is_starting_imbue or not has_starting_imbue) and (
                 not effect.is_starting_skill or not has_starting_skill
             ):
                 has_starting_imbue |= effect.is_starting_imbue
                 has_starting_skill |= effect.is_starting_skill
                 active.append(effect)
-                score += score_table.get(effect.name, 0) * (effect.level + 1)
+                # allow for scores from "EffectName +N" specifically
+                effect_score = score_table.get(str(effect))
+                if effect_score is None:
+                    # fallback to general score for "EffectName"
+                    effect_score = score_table.get(effect.name, 0) * (
+                        effect.level + 1
+                    )
+                score += effect_score
     return ScoredEffects(active_effects=tuple(active), score=score)
 
 

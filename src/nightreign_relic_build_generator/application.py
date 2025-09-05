@@ -203,8 +203,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=int,
         default=1,
     )
-
-    # TODO: allow setting different scores for +N
     args = parser.parse_args(args=argv)
 
     configure_logging(
