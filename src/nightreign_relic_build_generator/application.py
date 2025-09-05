@@ -167,7 +167,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         choices=list_builtin_score_resources(),
         help="The name of a builtin score profile.",
     )
-
     compute_parser.add_argument(
         "-c",
         "--character-class",
@@ -202,6 +201,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         ),
         type=int,
         default=1,
+    )
+    compute_parser.add_argument(
+        "--no-progress-bar",
+        action="store_true",
+        help="Disables the progress bar typically rendered to stderr.",
     )
     args = parser.parse_args(args=argv)
 
@@ -277,6 +281,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         count=args.limit,
                         prune=args.prune,
                         minimum=args.minimum,
+                        progress_bar=not args.no_progress_bar,
                     )
                 ):
                     print("")

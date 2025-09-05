@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, field
 from heapq import heappush, heapreplace
 from itertools import chain, permutations
-from typing import Generator, Sequence
+from typing import Generator, Iterable, Sequence
 
 from tqdm import tqdm
 
@@ -114,6 +114,7 @@ def get_relic_permutations(
     *,
     score_table: dict[str, int],
     prune: int,
+    progress_bar: bool,
 ) -> Generator[tuple[Relic, ...], None, None]:
     # first, score and prune out any relics that provide no value
     relics = [
@@ -125,10 +126,15 @@ def get_relic_permutations(
     count = len(relics)
     logger.info(f"Relics left after pruning: {count}")
     rng = range(1, min(3, count) + 1)
-    total = sum(math.perm(count, r) for r in rng)
-    for build in tqdm(
-        chain.from_iterable(permutations(relics, r) for r in rng), total=total
-    ):
+
+    iterable: Iterable[tuple[Relic, ...]] = chain.from_iterable(
+        permutations(relics, r) for r in rng
+    )
+    if progress_bar:
+        # 'total' passed for a finite progress bar; it needs to know the count
+        iterable = tqdm(iterable, total=sum(math.perm(count, r) for r in rng))
+
+    for build in iterable:
         build_colors: list[Color | None] = [relic.color for relic in build]
 
         while len(build_colors) < 3:
@@ -159,9 +165,14 @@ def get_builds(
     score_table: dict[str, int],
     prune: int,
     minimum: int,
+    progress_bar: bool,
 ) -> Generator[Build, None, None]:
     for combination in get_relic_permutations(
-        relics, urns, score_table=score_table, prune=prune
+        relics,
+        urns,
+        score_table=score_table,
+        prune=prune,
+        progress_bar=progress_bar,
     ):
         scored_effects = get_scored_effects(
             [effect for relic in combination for effect in relic.effects],
@@ -183,6 +194,7 @@ def get_top_builds(
     count: int,
     prune: int,
     minimum: int,
+    progress_bar: bool,
 ) -> list[Build]:
     top = BuildHeap(count)
     for build in get_builds(
@@ -191,6 +203,7 @@ def get_top_builds(
         score_table=score_table,
         prune=prune,
         minimum=minimum,
+        progress_bar=progress_bar,
     ):
         top.consider(build)
     return top.results_desc()
