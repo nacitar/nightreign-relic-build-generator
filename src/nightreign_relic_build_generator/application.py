@@ -8,8 +8,14 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-from .finder import CLASS_URNS, UNIVERSAL_URNS, get_top_builds
-from .nightreign import Database, Relic, load_save_file
+from .finder import get_top_builds
+from .nightreign import (
+    CLASS_URNS,
+    UNIVERSAL_URNS,
+    Database,
+    Relic,
+    load_save_file,
+)
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -190,7 +196,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=1,
     )
 
-    # TODO: minimum score overall
+    # TODO: minimum score overall, allow setting different scores for +N
     args = parser.parse_args(args=argv)
 
     configure_logging(

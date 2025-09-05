@@ -472,3 +472,36 @@ class Database:
 
     def __post_init__(self) -> None:
         self.load_from_save_editor()
+
+
+UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
+    "Sacred Erdtree Grail": (Color.YELLOW, Color.YELLOW, Color.YELLOW),
+    "Spirit Shelter Grail": (Color.GREEN, Color.GREEN, Color.GREEN),
+    "Giant's Cradle Grail": (Color.BLUE, Color.BLUE, Color.BLUE),
+}
+
+CLASS_URNS: dict[
+    str, dict[str, tuple[Color | None, Color | None, Color | None]]
+] = {
+    "raider": {
+        "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+        "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+        "Raider's Chalice": (Color.RED, Color.RED, None),
+        "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
+    },
+    "guardian": {
+        "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Guardian's Goblet": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Guardian's Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+        "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+    },
+    "executor": {
+        "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
+        "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
+        "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+    },
+}
