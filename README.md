@@ -112,6 +112,12 @@ Power-user options you probably don't want to change:
 - -p/--prune, the minimum score a relic must have to be considered (default 1)
 - --no-progress-bar, disables the progress bar printed to stderr
 
+An example invocation using the urns for raider and using the builtin score
+table I've created as an example for raider:
+```bash
+app compute YourSave.sl2 -c raider -b raider
+```
+
 # Setup
 ## poetry
 This is the recommended way to setup the project, but for non-developers and
