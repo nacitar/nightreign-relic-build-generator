@@ -120,13 +120,11 @@ app compute YourSave.sl2 -c raider -b raider
 
 # Setup
 ## poetry
-This is the recommended way to setup the project, but for non-developers and
-especially Windows users it may not be preferred.  But, assuming you have
-poetry available and in PATH:
+This project is configured to be managed by [Poetry](https://python-poetry.org/docs/#installation).
+There are other ways you can set things up but they won't be discussed or
+supported here.  Once your system has poetry availabe and in PATH:
 ```bash
 # from the project directory tree; install is only needed once per pull
 poetry install
 poetry run app <arguments>
 ```
-## pip only
-TODO: fill this in
