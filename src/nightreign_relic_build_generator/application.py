@@ -185,6 +185,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=50,
     )
     compute_parser.add_argument(
+        "-m",
+        "--minimum",
+        metavar="SCORE",
+        help="The minimum score required for a build to be accepted.",
+        type=int,
+        default=1,
+    )
+    compute_parser.add_argument(
         "-p",
         "--prune",
         metavar="SCORE",
@@ -196,7 +204,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         default=1,
     )
 
-    # TODO: minimum score overall, allow setting different scores for +N
+    # TODO: allow setting different scores for +N
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -270,6 +278,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         score_table=score_table,
                         count=args.limit,
                         prune=args.prune,
+                        minimum=args.minimum,
                     )
                 ):
                     print("")

@@ -146,6 +146,7 @@ def get_builds(
     *,
     score_table: dict[str, int],
     prune: int,
+    minimum: int,
 ) -> Generator[Build, None, None]:
     for combination in get_relic_permutations(
         relics, urns, score_table=score_table, prune=prune
@@ -154,11 +155,12 @@ def get_builds(
             [effect for relic in combination for effect in relic.effects],
             score_table=score_table,
         )
-        yield Build(
-            active_effects=scored_effects.active_effects,
-            score=scored_effects.score,
-            relics=combination,
-        )
+        if scored_effects.score >= minimum:
+            yield Build(
+                active_effects=scored_effects.active_effects,
+                score=scored_effects.score,
+                relics=combination,
+            )
 
 
 def get_top_builds(
@@ -168,10 +170,15 @@ def get_top_builds(
     score_table: dict[str, int],
     count: int,
     prune: int,
+    minimum: int,
 ) -> list[Build]:
     top = BuildHeap(count)
     for build in get_builds(
-        relics=relics, urns=urns, score_table=score_table, prune=prune
+        relics=relics,
+        urns=urns,
+        score_table=score_table,
+        prune=prune,
+        minimum=minimum,
     ):
         top.consider(build)
     return top.results_desc()
