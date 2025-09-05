@@ -98,10 +98,10 @@ def get_scored_effects(
                 has_starting_skill |= effect.is_starting_skill
                 active.append(effect)
                 # allow for scores from "EffectName +N" specifically
-                effect_score = score_table.get(effect.qualified_name)
+                effect_score = score_table.get(effect.qualified_name.lower())
                 if effect_score is None:
                     # fallback to general score for "EffectName"
-                    effect_score = score_table.get(effect.name, 0) * (
+                    effect_score = score_table.get(effect.name.lower(), 0) * (
                         effect.level + 1
                     )
                 score += effect_score

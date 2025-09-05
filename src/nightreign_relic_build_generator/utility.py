@@ -42,7 +42,10 @@ def validate_scores(score_table: Any) -> dict[str, int]:
             raise ValueError(f"key not a str: {type(key).__name__} = {key}")
         if not isinstance(value, int):
             raise ValueError(f"value not an int: {type(key).__name__} = {key}")
-    return score_table
+    lowercase_score_table: dict[str, int] = {
+        key.lower(): value for key, value in score_table.items()
+    }
+    return lowercase_score_table
 
 
 SCORE_RESOURCE_PATTERN = re.compile(
