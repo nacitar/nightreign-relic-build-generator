@@ -240,10 +240,14 @@ class Effect:
     is_starting_imbue: bool
     is_starting_skill: bool
 
+    @property
+    def qualified_name(self) -> str:
+        return f"{self.name} +{self.level}"
+
     def __str__(self) -> str:
         if not self.level:
             return self.name
-        return f"{self.name} +{self.level}"
+        return self.qualified_name
 
 
 @dataclass(frozen=True)

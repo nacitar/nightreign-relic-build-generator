@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import logging
+import math
 import os
 from dataclasses import dataclass, field
 from heapq import heappush, heapreplace
 from itertools import chain, permutations
 from typing import Generator, Sequence
+
+from tqdm import tqdm
 
 from .nightreign import Color, Effect, Relic
 
@@ -95,7 +98,7 @@ def get_scored_effects(
                 has_starting_skill |= effect.is_starting_skill
                 active.append(effect)
                 # allow for scores from "EffectName +N" specifically
-                effect_score = score_table.get(str(effect))
+                effect_score = score_table.get(effect.qualified_name)
                 if effect_score is None:
                     # fallback to general score for "EffectName"
                     effect_score = score_table.get(effect.name, 0) * (
@@ -119,11 +122,12 @@ def get_relic_permutations(
         if get_scored_effects(relic.effects, score_table=score_table).score
         >= prune
     ]
-    logger.info(f"Relics left after pruning: {len(relics)}")
-    # TODO: calculate number of combinations?  progress bar?
-
-    for build in chain.from_iterable(
-        permutations(relics, r) for r in range(1, min(3, len(relics)) + 1)
+    count = len(relics)
+    logger.info(f"Relics left after pruning: {count}")
+    rng = range(1, min(3, count) + 1)
+    total = sum(math.perm(count, r) for r in rng)
+    for build in tqdm(
+        chain.from_iterable(permutations(relics, r) for r in rng), total=total
     ):
         build_colors: list[Color | None] = [relic.color for relic in build]
 
