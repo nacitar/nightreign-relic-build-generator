@@ -487,12 +487,19 @@ UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
 CLASS_URNS: dict[
     str, dict[str, tuple[Color | None, Color | None, Color | None]]
 ] = {
-    "raider": {
-        "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
-        "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
-        "Raider's Chalice": (Color.RED, Color.RED, None),
-        "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
-        "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
+    "duchess": {
+        "Duchess' Urn": (Color.RED, Color.BLUE, Color.BLUE),
+        "Duchess' Goblet": (Color.YELLOW, Color.YELLOW, Color.GREEN),
+        "Duchess' Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Duchess' Urn": (Color.RED, Color.RED, Color.GREEN),
+        "Sealed Duchess' Urn": (Color.BLUE, Color.BLUE, Color.RED),
+    },
+    "executor": {
+        "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
+        "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
+        "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
+        "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
     },
     "guardian": {
         "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
@@ -501,11 +508,39 @@ CLASS_URNS: dict[
         "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
         "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
     },
-    "executor": {
-        "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-        "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
-        "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
-        "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
-        "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
+    "ironeye": {
+        "Ironeye's Urn": (Color.YELLOW, Color.GREEN, Color.GREEN),
+        "Ironeye's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+        "Ironeye's Chalice": (Color.RED, Color.GREEN, None),
+        "Soot-Covered Ironeye's Urn": (Color.BLUE, Color.YELLOW, Color.YELLOW),
+        "Sealed Ironeye's Urn": (Color.GREEN, Color.GREEN, Color.YELLOW),
+    },
+    "raider": {
+        "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
+        "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+        "Raider's Chalice": (Color.RED, Color.RED, None),
+        "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
+    },
+    "recluse": {
+        "Recluse's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
+        "Recluse's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
+        "Recluse's Chalice": (Color.YELLOW, Color.GREEN, None),
+        "Soot-Covered Recluse's Urn": (Color.RED, Color.RED, Color.YELLOW),
+        "Sealed Recluse's Urn": (Color.GREEN, Color.BLUE, Color.BLUE),
+    },
+    "revenant": {
+        "Revenant's Urn": (Color.BLUE, Color.BLUE, Color.YELLOW),
+        "Revenant's Goblet": (Color.RED, Color.RED, Color.GREEN),
+        "Revenant's Chalice": (Color.BLUE, Color.GREEN, None),
+        "Soot-Covered Revenant's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
+        "Sealed Revenant's Urn": (Color.YELLOW, Color.BLUE, Color.BLUE),
+    },
+    "wylder": {
+        "Wylder's Urn": (Color.RED, Color.RED, Color.BLUE),
+        "Wylder's Goblet": (Color.YELLOW, Color.GREEN, Color.GREEN),
+        "Wylder's Chalice": (Color.RED, Color.YELLOW, None),
+        "Soot-Covered Wylder's Urn": (Color.BLUE, Color.BLUE, Color.YELLOW),
+        "Sealed Wylder's Urn": (Color.BLUE, Color.RED, Color.RED),
     },
 }
