@@ -86,6 +86,7 @@ class InventorySlotInfo:
 class RelicData:
     item_id: int
     effect_ids: tuple[int, ...]
+    save_offset: int
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -172,6 +173,7 @@ class SaveData:
                             )
                             if effect_id != type(self)._EMPTY_EFFECT_ID
                         ),
+                        save_offset=offset,
                     )
                 )
             else:
@@ -257,6 +259,7 @@ class Relic:
     size: int
     name: str
     effects: tuple[Effect, ...]
+    save_offset: int | None = None  # only used for debugging
 
     @property
     def is_incomplete(self) -> bool:
@@ -391,6 +394,7 @@ class Database:
                 size=len(data.effect_ids),
                 name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
+                save_offset=data.save_offset,
             )
         if info.size != len(data.effect_ids):
             raise AssertionError(
@@ -419,6 +423,7 @@ class Database:
             size=info.size,
             name=self.relic_names.get(data.item_id, standard_name),
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
+            save_offset=data.save_offset,
         )
 
     def load_from_save_editor(self) -> None:
