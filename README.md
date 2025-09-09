@@ -2,6 +2,15 @@
 This utility is used to find combinations of your relics which can be equipped
 together in order to make a desirable build.
 
+# WARNING - Parser Limitation
+When using this tool, it should only be used to access a save file that since
+the last time the save was loaded hasn't had any relics sold in-game.  Due to
+the way the inventory is parsed by this tool, data for relics that have been
+sold can incorrectly be parsed as if they are relics in your collection.
+
+This is easily addressed by reloading your save before using this tool, and
+will likely be fixed in a future release if I can find a way to avoid it.
+
 # How It Works
 Your relics are determined by parsing your save file.  What constitutes a
 "good" build, though, is decided by the user via a simple json file that

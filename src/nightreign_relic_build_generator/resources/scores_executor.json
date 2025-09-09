@@ -1,7 +1,9 @@
 {
     "Starting armament inflicts frost": 200,
-    "Changes compatible armament's skill to Seppuku at start of expedition": 200,
     "Attack power increased for each evergaol prisoner defeated": 200,
+
+    "Changes compatible armament's skill to Seppuku at start of expedition": 100,
+    "Changes compatible armament's skill to Blood Blade at start of expedition": 100,
 
     "Slowly restore HP for self and nearby allies when HP is low": 100,
     "HP Recovery From Successful Guarding": 100,

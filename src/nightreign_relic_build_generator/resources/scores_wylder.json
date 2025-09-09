@@ -1,0 +1,19 @@
+{
+    "[Wylder] +1 additional Character Skill use": 100,
+    "Slowly restore HP for self and nearby allies when HP is low": 100,
+    "Attack power increased for each evergaol prisoner defeated": 100,
+    "Partial HP Restoration upon Post-Damage Attacks": 100,
+
+    "[Wylder] Standard attacks enhanced with fiery follow-ups when using Character Skill (greatsword only)": 30,
+    "[Wylder] Art activation spreads fire in area": 30,
+
+    "Improved Damage Negation at Low HP": 20,
+    "Physical Attack Up": 20,
+    "Stamina Recovery upon Landing Attacks": 20,
+
+    "Taking attacks improves attack power": 10,
+
+    "Stonesword Key in possession at start of expedition": 5,
+    "Small Pouch in possession at start of expedition": 1,
+    "Continuous HP Recovery": 1
+}

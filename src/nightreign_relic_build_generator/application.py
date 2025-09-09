@@ -256,7 +256,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print("INCOMPLETE RELICS:")
                 for relic in incomplete_relics:
                     print(relic)
-                    logger.debug(f"^ save offset: {relic.save_offset}")
+                    if relic.save_offset is not None:
+                        logger.debug(f"^ save offset: {relic.save_offset}")
                 logger.debug(f"inventory offset: {save_data.inventory_offset}")
                 print("")
             print("")
