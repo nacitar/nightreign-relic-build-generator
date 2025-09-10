@@ -173,7 +173,6 @@ class RelicData:
 class SaveData:
     _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     _REQUIRED_NON_EMPTY_COUNT: ClassVar[int] = 5
-    _MINIMUM_NAME_LENGTH: ClassVar[int] = 3  # smaller matches non-name things
 
     data: bytes = field(repr=False)
     title: str = ""
