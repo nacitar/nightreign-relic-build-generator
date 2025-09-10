@@ -230,8 +230,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         save_title = f"USER_DATA{args.index:03d}"
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
         save_data = load_save_file(Path(args.sl2_file), save_title)
-        logger.info(f"Loaded entry {save_data.title}: {save_data.name}")
-
+        logger.info(f"Loaded entry: {save_data.title}")
         database = Database()
         relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
@@ -258,7 +257,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     print(relic)
                     if relic.save_offset is not None:
                         logger.debug(f"^ save offset: {relic.save_offset}")
-                logger.debug(f"inventory offset: {save_data.inventory_offset}")
+                logger.debug(f"metadata offset: {save_data.metadata_offset}")
                 print("")
             print("")
             print(

@@ -5,80 +5,160 @@ import os
 import re
 import struct
 from dataclasses import dataclass, field
-from enum import StrEnum, unique
+from enum import Enum, StrEnum, auto, unique
 from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
-from typing import ByteString, ClassVar, cast
+from typing import ByteString, ClassVar, Mapping, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
-from .utility import get_resource_json, read_utf16le_string
+from .utility import get_resource_json
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass(kw_only=True)
-class InventorySlotInfo:
-    _EMPTY_SLOT_BYTES: ClassVar[bytes] = b"\x00\x00\x00\x00\xff\xff\xff\xff"
-    _TYPE_ID_TO_LENGTH: ClassVar[MappingProxyType[int, int]] = (
-        MappingProxyType({0x80: 80, 0x90: 16, 0xC0: 72})
+@unique
+class EntityType(Enum):
+    WEAPON = auto()
+    ARMOR = auto()
+    RELIC = auto()
+    VALID_UNKNOWN_B0 = auto()
+    VALID_UNKNOWN_A0 = auto()
+    EMPTY_SLOT = auto()
+
+    @classmethod
+    def from_identifiers(
+        cls, type_id: int, subtype_id: int
+    ) -> EntityType | None:
+        if subtype_id in (0x80, 0x81, 0x82, 0x83, 0x84, 0x85):
+            match type_id:
+                case 0x80:
+                    return cls.WEAPON
+                case 0x90:
+                    return cls.ARMOR
+                case 0xC0:
+                    return cls.RELIC
+        elif subtype_id == 0x00:
+            match type_id:
+                case 0xB0:
+                    return cls.VALID_UNKNOWN_B0  # consumables?
+                case 0xA0:
+                    return cls.VALID_UNKNOWN_A0  # ?? rings in elden ring
+                case 0x00:
+                    return cls.EMPTY_SLOT
+        return None
+
+
+@dataclass
+class EntityHeader:
+    _STRUCT: ClassVar[struct.Struct] = struct.Struct("<HBB")
+    item_id: int
+    entity_type: EntityType
+    data: memoryview
+
+    @classmethod
+    def from_data(cls, data: ByteString, offset: int) -> EntityHeader | None:
+        try:
+            view = memoryview(data)[offset : offset + cls._STRUCT.size]
+            header_fields: tuple[int, int, int] = cls._STRUCT.unpack_from(view)
+            item_id, subtype_id, type_id = header_fields
+            entity_type = EntityType.from_identifiers(type_id, subtype_id)
+            if entity_type:
+                return EntityHeader(
+                    item_id=item_id, entity_type=entity_type, data=view
+                )
+        except struct.error:
+            pass
+        return None
+
+
+@unique
+class Section(Enum):
+    INVENTORY = auto()
+    METADATA = auto()
+
+
+@dataclass
+class Entity:
+    _INVENTORY_BLOCK_SIZE_TABLE: ClassVar[Mapping[EntityType, int]] = (
+        MappingProxyType({entity_type: 14 for entity_type in EntityType})
     )
-    _VALID_SUBTYPES: ClassVar[tuple[int, ...]] = (
-        0x80,
-        0x81,
-        0x82,
-        0x83,
-        0x84,
-        0x85,
+    _INVENTORY_EMPTY_SLOT_BYTES: ClassVar[bytes] = (
+        b"\x00" * _INVENTORY_BLOCK_SIZE_TABLE[EntityType.EMPTY_SLOT]
     )
-    subtype_id: int | None
-    type_id: int
-    length: int
-
-    @property
-    def is_default_subtype(self) -> bool:
-        return self.subtype_id == 0x80  # TODO: when is this ever different?
-
-    @property
-    def is_relic(self) -> bool:
-        return self.type_id == 0xC0
-
-    @property
-    def is_weapon(self) -> bool:
-        return self.type_id == 0x80
-
-    @property
-    def is_armor(self) -> bool:
-        return self.type_id == 0x90
-
-    @property
-    def is_empty_slot(self) -> bool:
-        return self.subtype_id is None and self.type_id == 0
+    _METADATA_EMPTY_SLOT_BYTES: ClassVar[bytes] = b"\x00" * 4 + b"\xff" * 4
+    _METADATA_BLOCK_SIZE_TABLE: ClassVar[MappingProxyType[EntityType, int]] = (
+        MappingProxyType(
+            {
+                EntityType.WEAPON: 80,
+                EntityType.ARMOR: 16,
+                EntityType.RELIC: 72,
+                EntityType.EMPTY_SLOT: len(_METADATA_EMPTY_SLOT_BYTES),
+            }
+        )
+    )
+    header: EntityHeader
+    data: memoryview
 
     @classmethod
     def from_data(
-        cls, data: ByteString, offset: int
-    ) -> InventorySlotInfo | None:
-        pos = offset + 2
-        if pos + 1 < len(data):
-            subtype_id = data[pos]
-            if subtype_id in cls._VALID_SUBTYPES:
-                type_id = data[pos + 1]
-                length = cls._TYPE_ID_TO_LENGTH.get(type_id, 0)
-                if length:
-                    return InventorySlotInfo(
-                        subtype_id=subtype_id, type_id=type_id, length=length
-                    )
-        empty_slot_len = len(cls._EMPTY_SLOT_BYTES)
-        if offset + empty_slot_len < len(data):
-            if memoryview(data)[
-                offset : offset + empty_slot_len
-            ] == memoryview(cls._EMPTY_SLOT_BYTES):
-                return InventorySlotInfo(
-                    subtype_id=None, type_id=0x00, length=empty_slot_len
-                )
+        cls, section: Section, data: ByteString, offset: int
+    ) -> Entity | None:
+        match section:
+            case Section.INVENTORY:
+                empty_slot_bytes = cls._INVENTORY_EMPTY_SLOT_BYTES
+                block_size_table = cls._INVENTORY_BLOCK_SIZE_TABLE
+            case Section.METADATA:
+                empty_slot_bytes = cls._METADATA_EMPTY_SLOT_BYTES
+                block_size_table = cls._METADATA_BLOCK_SIZE_TABLE
+            case _:
+                raise NotImplementedError()
+        header = EntityHeader.from_data(data, offset)
+        if header:
+            size = block_size_table.get(header.entity_type)
+            if size:
+                view = memoryview(data)[offset : offset + size]
+                if len(view) == size:
+                    if (
+                        header.entity_type is EntityType.EMPTY_SLOT
+                        and view != empty_slot_bytes
+                    ):
+                        header = None
+                    if header:
+                        return Entity(header=header, data=view)
+        return None
+
+    @classmethod
+    def find_offset(
+        cls,
+        section: Section,
+        data: ByteString,
+        *,
+        offset: int,
+        required_non_empty_count: int,
+        max_offset: int | None = None,
+        step_size: int = 1,
+    ) -> int | None:
+        if step_size < 1:
+            raise ValueError("step_size must be a positive integer.")
+        if required_non_empty_count < 1:
+            raise ValueError(
+                "required_non_empty_count must be a positive integer."
+            )
+        while max_offset is None or offset <= max_offset:
+            entry_offset = offset
+            entries = 0
+            while entry_offset < len(data) and (
+                entry := cls.from_data(section, data, entry_offset)
+            ):
+                if entry.header.entity_type is not EntityType.EMPTY_SLOT:
+                    entries += 1
+                    if entries >= required_non_empty_count:
+                        return offset
+                entry_offset += len(entry.data)
+            offset += step_size
         return None
 
 
@@ -92,100 +172,106 @@ class RelicData:
 @dataclass(frozen=True, kw_only=True)
 class SaveData:
     _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
-    _MINIMUM_INVENTORY_SIZE: ClassVar[int] = 5  # how many entries must exist
+    _REQUIRED_NON_EMPTY_COUNT: ClassVar[int] = 5
     _MINIMUM_NAME_LENGTH: ClassVar[int] = 3  # smaller matches non-name things
 
     data: bytes = field(repr=False)
     title: str = ""
 
     @cached_property
-    def murk(self) -> int:
-        if self.name_offset:
-            return cast(
-                int,
-                struct.unpack_from("<I", self.data, self.name_offset + 52)[0],
-            )
-        return -1
+    def metadata_offset(self) -> int | None:
+        return Entity.find_offset(
+            Section.METADATA,
+            self.data,
+            offset=0,
+            max_offset=100,
+            required_non_empty_count=type(self)._REQUIRED_NON_EMPTY_COUNT,
+            step_size=2,
+        )
 
     @cached_property
-    def sigils(self) -> int:
-        if self.name_offset:
-            return cast(
-                int,
-                struct.unpack_from("<I", self.data, self.name_offset - 64)[0],
-            )
-        return -1
-
-    @cached_property
-    def name_offset(self) -> int | None:
-        name_offset = None
-        for i in range(0, len(self.data), 2):
-            if 32 <= self.data[i] <= 126 and not self.data[i + 1]:
-                if name_offset is None:
-                    name_offset = i
-                if (i - name_offset + 2) > SaveData._MINIMUM_NAME_LENGTH * 2:
-                    return name_offset
-            else:
-                name_offset = None
-        return name_offset
-
-    @cached_property
-    def name(self) -> str:
-        if self.name_offset is None:
-            return ""
-        return read_utf16le_string(self.data, self.name_offset)
-
-    @cached_property
-    def inventory_offset(self) -> int | None:
-        start_offset = 0
-        while start_offset < 100:  # my offset is 20, but allowing for changes
-            offset = start_offset
-            entries = 0
-            while offset < len(self.data) and (
-                slot_info := InventorySlotInfo.from_data(self.data, offset)
-            ):
-                entries += 1
-                if entries >= SaveData._MINIMUM_INVENTORY_SIZE:
-                    return start_offset
-                offset += slot_info.length
-            start_offset += 2  # only look at 2-byte-aligned offsets
-        return None
-
-    @cached_property
-    def relics(self) -> tuple[RelicData, ...]:
-        offset = self.inventory_offset
-        if offset is None:
-            return tuple()
-        view = memoryview(self.data)
-        relics: list[RelicData] = []
-        while slot_info := InventorySlotInfo.from_data(view, offset):
-            if slot_info.is_relic:
-                relics.append(
-                    RelicData(
+    def metadata_relic_table_and_end_offset(
+        self,
+    ) -> tuple[Mapping[int, RelicData], int | None]:
+        offset = self.metadata_offset
+        relics: dict[int, RelicData] = {}
+        if offset is not None:
+            view = memoryview(self.data)
+            while entity := Entity.from_data(Section.METADATA, view, offset):
+                if entity.header.entity_type is EntityType.RELIC:
+                    relics[entity.header.item_id] = RelicData(
                         item_id=cast(
-                            int, struct.unpack_from("<H", view, offset + 4)[0]
+                            int, struct.unpack_from("<H", entity.data, 4)[0]
                         ),
                         effect_ids=tuple(
                             effect_id
                             for effect_id in cast(
                                 tuple[int, int, int],
-                                struct.unpack_from("<III", view, offset + 16),
+                                struct.unpack_from("<III", entity.data, 16),
                             )
                             if effect_id != type(self)._EMPTY_EFFECT_ID
                         ),
                         save_offset=offset,
                     )
-                )
-            else:
-                logger.debug(
-                    f"non-relic slot encountered, type: {slot_info.type_id:x}"
-                )
-            offset += slot_info.length
+                else:
+                    logger.debug(
+                        "non-relic item encountered,"
+                        f" type: {entity.header.entity_type.name}"
+                    )
+                offset += len(entity.data)
+        return (MappingProxyType(relics), offset)
+
+    @property
+    def metadata_end_offset(self) -> int | None:
+        return self.metadata_relic_table_and_end_offset[1]
+
+    @property
+    def metadata_relic_table(self) -> Mapping[int, RelicData]:
+        return self.metadata_relic_table_and_end_offset[0]
+
+    @cached_property
+    def inventory_offset(self) -> int | None:
+        offset = self.metadata_end_offset
+        if offset is not None:
+            return Entity.find_offset(
+                Section.INVENTORY,
+                self.data,
+                offset=offset,
+                required_non_empty_count=type(self)._REQUIRED_NON_EMPTY_COUNT,
+                step_size=2,
+            )
+        return None
+
+    @cached_property
+    def relics(self) -> tuple[RelicData, ...]:
+        relics: list[RelicData] = []
+        offset = self.inventory_offset
+        metadata_relic_table = self.metadata_relic_table
+        if offset is not None:
+            view = memoryview(self.data)
+            while entity := Entity.from_data(Section.INVENTORY, view, offset):
+                if entity.header.entity_type is EntityType.RELIC:
+                    relic_data = metadata_relic_table.get(
+                        entity.header.item_id
+                    )
+                    if relic_data:
+                        relics.append(relic_data)
+                    else:
+                        logger.error(
+                            "skipping inventory relic with"
+                            f" no metadata: {entity.header.item_id}"
+                        )
+                else:
+                    logger.debug(
+                        "non-relic entry encountered,"
+                        f" type: {entity.header.entity_type}"
+                    )
+                offset += len(entity.data)
         return tuple(relics)
 
 
 def load_save(data: ByteString, entry_name: str) -> SaveData:
-    IV_SIZE = 0x10
+    IV_LENGTH = 0x10
     for slot in bnd4.get_entries(data):
         logger.debug(f"encountered save slot named: {slot.name}")
         if not entry_name or slot.name == entry_name:
@@ -194,12 +280,12 @@ def load_save(data: ByteString, entry_name: str) -> SaveData:
                     b"\x18\xf6\x32\x66\x05\xbd\x17\x8a"
                     b"\x55\x24\x52\x3a\xc0\xa0\xc6\x09"
                 ),
-                modes.CBC(slot.data[:IV_SIZE]),
+                modes.CBC(slot.data[:IV_LENGTH]),
             ).decryptor()
             return SaveData(
                 title=slot.name,
                 data=(
-                    decryptor.update(slot.data[IV_SIZE:])
+                    decryptor.update(slot.data[IV_LENGTH:])
                     + decryptor.finalize()
                 ),
             )
