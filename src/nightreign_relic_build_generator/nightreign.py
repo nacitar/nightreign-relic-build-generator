@@ -343,6 +343,7 @@ class Relic:
     color: Color
     size: int
     name: str
+    deep: bool
     effects: tuple[Effect, ...]
     save_offset: int | None = None  # only used for debugging
 
@@ -354,7 +355,8 @@ class Relic:
         )
 
     def __str__(self) -> str:
-        lines: list[str] = [f"[{self.color}] {self.name}"]
+        deep_prefix = "DEEP " if self.deep else ""
+        lines: list[str] = [f"[{deep_prefix}{self.color}] {self.name}"]
         for effect in self.effects:
             lines.append(f"- {effect}")
         return os.linesep.join(lines)
@@ -366,6 +368,7 @@ class Database:
     class _RelicMetadata:
         color: Color
         size: int
+        deep: bool
 
     @dataclass(frozen=True)
     class _EffectMetadata:
@@ -480,6 +483,7 @@ class Database:
                 name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
                 save_offset=data.save_offset,
+                deep=False,  # TODO: indeterminate?
             )
         if info.size != len(data.effect_ids):
             raise AssertionError(
@@ -509,6 +513,7 @@ class Database:
             name=self.relic_names.get(data.item_id, standard_name),
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
             save_offset=data.save_offset,
+            deep=info.deep,
         )
 
     def load_from_save_editor(self) -> None:
@@ -529,8 +534,15 @@ class Database:
             if not name:
                 logger.error(f"Skipping {item_id}: no name provided")
                 continue
+            deep = name.startswith("Deep")
+            size_word_offset = 0 if not deep else 1
             try:
-                size = type(self).SIZE_NAMES.index(name.split(" ", 1)[0]) + 1
+                size = (
+                    type(self).SIZE_NAMES.index(
+                        name.split(" ", 2)[size_word_offset]
+                    )
+                    + 1
+                )
             except ValueError:
                 size = {
                     "Torn Braided Cord": 2,
@@ -549,7 +561,7 @@ class Database:
                 }.get(name, 3)
                 logger.debug(f"Assuming {item_id} has {size} effects: {name}")
             self.relic_id_to_info[int(item_id)] = type(self)._RelicMetadata(
-                color=color, size=size
+                color=color, size=size, deep=deep
             )
 
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")

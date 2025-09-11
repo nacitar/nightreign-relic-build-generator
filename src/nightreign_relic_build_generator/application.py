@@ -233,14 +233,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info(f"Loaded entry: {save_data.title}")
         database = Database()
         relics: list[Relic] = []
+        deep_relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
         for relic_data in save_data.relics:
             relic = database.get_relic(relic_data)
             if relic.is_incomplete:
                 incomplete_relics.append(relic)
+            elif relic.deep:
+                deep_relics.append(relic)
             else:
                 relics.append(relic)
-        logger.info(f"Loaded {len(relics)} complete relics.")
+
+        relic_count_str = (
+                f"Relics: {len(relics)} standard, {len(deep_relics)} deep"
+                f", {len(incomplete_relics)} incomplete."
+        )
+        logger.info(relic_count_str)
         if incomplete_relics:
             logger.warning(
                 f"Excluded {len(incomplete_relics)} incomplete relics"
@@ -260,10 +268,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 logger.debug(f"metadata offset: {save_data.metadata_offset}")
                 print("")
             print("")
-            print(
-                f"Listed {len(relics)} complete and {len(incomplete_relics)}"
-                " incomplete relics."
-            )
+            print(relic_count_str)
+            print("TODO: deep relics were ignored")
         else:
             incomplete_relics.clear()  # free this memory
             if args.operation == "compute":
