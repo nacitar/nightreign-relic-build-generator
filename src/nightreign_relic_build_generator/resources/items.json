@@ -1359,6 +1359,18 @@
     "name": "Grand Tranquil Scene",
     "color": "Green"
   },
+  "33922": {
+    "name": "Deep Grand Burning Scene",
+    "color": "Red"
+  },
+  "33930": {
+    "name": "Deep Delicate Burning Scene",
+    "color": "Red"
+  },
+  "33931": {
+    "name": "Deep Polished Burning Scene",
+    "color": "Red"
+  },
   "34020": {
     "name": "Deep Delicate Drizzly Scene",
     "color": "Blue"
@@ -1371,9 +1383,53 @@
     "name": "Deep Grand Drizzly Scene",
     "color": "Blue"
   },
+  "34030": {
+    "name": "Deep Delicate Drizzly Scene",
+    "color": "Blue"
+  },
+  "34031": {
+    "name": "Deep Polished Drizzly Scene",
+    "color": "Blue"
+  },
   "34032": {
     "name": "Deep Grand Drizzly Scene",
     "color": "Blue"
+  },
+  "34041": {
+    "name": "Deep Polished Drizzly Scene",
+    "color": "Blue"
+  },
+  "34042": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "34120": {
+    "name": "Deep Delicate Luminous Scene",
+    "color": "Yellow"
+  },
+  "34121": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "34131": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "34141": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "34142": {
+    "name": "Deep Grand Luminous Scene",
+    "color": "Yellow"
+  },
+  "34220": {
+    "name": "Deep Delicate Tranquil Scene",
+    "color": "Green"
+  },
+  "34221": {
+    "name": "Deep Polished Tranquil Scene",
+    "color": "Green"
   },
   "34222": {
     "name": "Deep Grand Tranquil Scene",
@@ -1383,8 +1439,40 @@
     "name": "Deep Polished Tranquil Scene",
     "color": "Green"
   },
+  "34232": {
+    "name": "Deep Grand Tranquil Scene",
+    "color": "Green"
+  },
+  "34240": {
+    "name": "Deep Delicate Tranquil Scene",
+    "color": "Green"
+  },
+  "34242": {
+    "name": "Deep Grand Tranquil Scene",
+    "color": "Green"
+  },
   "34921": {
     "name": "Deep Polished Burning Scene",
+    "color": "Red"
+  },
+  "34922": {
+    "name": "Deep Grand Burning Scene",
+    "color": "Red"
+  },
+  "34931": {
+    "name": "Deep Polished Burning Scene",
+    "color": "Red"
+  },
+  "34932": {
+    "name": "Deep Grand Burning Scene",
+    "color": "Red"
+  },
+  "34941": {
+    "name": "Deep Polished Burning Scene",
+    "color": "Red"
+  },
+  "34942": {
+    "name": "Deep Grand Burning Scene",
     "color": "Red"
   },
   "35022": {
@@ -1395,11 +1483,55 @@
     "name": "Deep Grand Drizzly Scene",
     "color": "Blue"
   },
+  "35131": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "35141": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "35142": {
+    "name": "Deep Grand Luminous Scene",
+    "color": "Yellow"
+  },
+  "35231": {
+    "name": "Deep Polished Tranquil Scene",
+    "color": "Green"
+  },
   "36022": {
     "name": "Deep Grand Drizzly Scene",
     "color": "Blue"
   },
+  "36032": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "36042": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "36222": {
+    "name": "Deep Grand Tranquil Scene",
+    "color": "Green"
+  },
+  "36922": {
+    "name": "Deep Grand Burning Scene",
+    "color": "Red"
+  },
   "36931": {
+    "name": "Deep Polished Burning Scene",
+    "color": "Red"
+  },
+  "36932": {
+    "name": "Deep Grand Burning Scene",
+    "color": "Red"
+  },
+  "36940": {
+    "name": "Deep Delicate Burning Scene",
+    "color": "Red"
+  },
+  "36941": {
     "name": "Deep Polished Burning Scene",
     "color": "Red"
   },
@@ -1407,12 +1539,84 @@
     "name": "Deep Grand Burning Scene",
     "color": "Red"
   },
+  "37022": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "37030": {
+    "name": "Deep Delicate Drizzly Scene",
+    "color": "Blue"
+  },
   "37031": {
     "name": "Deep Polished Drizzly Scene",
     "color": "Blue"
   },
+  "37032": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "37040": {
+    "name": "Deep Delicate Drizzly Scene",
+    "color": "Blue"
+  },
+  "37042": {
+    "name": "Deep Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "37120": {
+    "name": "Deep Delicate Luminous Scene",
+    "color": "Yellow"
+  },
+  "37121": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "37130": {
+    "name": "Deep Delicate Luminous Scene",
+    "color": "Yellow"
+  },
+  "37131": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "37132": {
+    "name": "Deep Grand Luminous Scene",
+    "color": "Yellow"
+  },
+  "37141": {
+    "name": "Deep Polished Luminous Scene",
+    "color": "Yellow"
+  },
+  "37142": {
+    "name": "Deep Grand Luminous Scene",
+    "color": "Yellow"
+  },
+  "37220": {
+    "name": "Deep Delicate Tranquil Scene",
+    "color": "Green"
+  },
+  "37221": {
+    "name": "Deep Polished Tranquil Scene",
+    "color": "Green"
+  },
+  "37230": {
+    "name": "Deep Delicate Tranquil Scene",
+    "color": "Green"
+  },
   "37231": {
     "name": "Deep Polished Tranquil Scene",
+    "color": "Green"
+  },
+  "37232": {
+    "name": "Deep Grand Tranquil Scene",
+    "color": "Green"
+  },
+  "37240": {
+    "name": "Deep Delicate Tranquil Scene",
+    "color": "Green"
+  },
+  "37242": {
+    "name": "Deep Grand Tranquil Scene",
     "color": "Green"
   },
   "1000000": {
