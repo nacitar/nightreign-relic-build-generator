@@ -1099,6 +1099,10 @@
     "name": "Grand Burning Scene",
     "color": "Red"
   },
+  "21970": {
+    "name": "Delicate Burning Scene",
+    "color": "Red"
+  },
   "21971": {
     "name": "Polished Burning Scene",
     "color": "Red"
@@ -1125,6 +1129,10 @@
   },
   "22062": {
     "name": "Grand Drizzly Scene",
+    "color": "Blue"
+  },
+  "22070": {
+    "name": "Delicate Drizzly Scene",
     "color": "Blue"
   },
   "22071": {
