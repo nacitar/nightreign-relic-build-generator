@@ -686,7 +686,7 @@ CLASS_URNS: dict[
 }
 
 
-@dataclass
+@dataclass(eq=False)  # no eq so object provides hashability
 class UrnTree:
     """
     Trie-like tree of color requirements. Each edge key is a Color or None
