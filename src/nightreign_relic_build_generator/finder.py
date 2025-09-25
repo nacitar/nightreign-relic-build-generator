@@ -4,7 +4,9 @@ import logging
 import os
 from dataclasses import dataclass, field
 from heapq import heappush, heapreplace
-from typing import Literal, NamedTuple, Sequence, Union
+from typing import Literal, NamedTuple, Never, Sequence, Union
+
+from tqdm.std import tqdm as Tqdm
 
 from .nightreign import Color, Effect, Relic, UrnTree
 
@@ -243,11 +245,11 @@ def get_top_builds(
     relics: Sequence[Relic],
     urn_tree: UrnTree,
     *,
+    progress_bar: Tqdm[Never] | None = None,
     score_table: dict[str, int],
     count: int,
     prune: int,
     minimum: int,
-    progress_bar: bool = False,
 ) -> list[Build]:
     """
     Branch-and-bound search that integrates scoring while walking the UrnTree.
@@ -428,6 +430,8 @@ def get_top_builds(
         for required_color in sorted(
             node.next.keys(), key=lambda k: (k is None, str(k))
         ):
+            if progress_bar is not None:
+                progress_bar.update(1)
             child = node.next[required_color]
 
             if required_color is None:

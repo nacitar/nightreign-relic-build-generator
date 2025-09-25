@@ -8,6 +8,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
+from tqdm import tqdm
+
 from .finder import get_top_builds
 from .nightreign import (
     CLASS_URNS,
@@ -202,11 +204,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=int,
         default=1,
     )
-    compute_parser.add_argument(
-        "--no-progress-bar",
-        action="store_true",
-        help="Disables the progress bar typically rendered to stderr.",
-    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -280,22 +277,34 @@ def main(argv: Sequence[str] | None = None) -> int:
 
                 urn_tree = NEW_CLASS_URNS[args.character_class]
 
-                for build in reversed(
+                print(
+                    "Generating permutations; this can take several minutes..."
+                )
+                progress_bar = tqdm(
+                    desc="Scoring possible builds", unit=" builds"
+                )
+                top_builds = reversed(
                     get_top_builds(
                         relics,
                         urn_tree,
+                        progress_bar=progress_bar,
                         score_table=score_table,
                         count=args.limit,
                         prune=args.prune,
                         minimum=args.minimum,
-                        progress_bar=not args.no_progress_bar,
                     )
-                ):
+                )
+                progress_bar.close()
+                for build in top_builds:
                     print("")
                     print(build)
 
                 print("")
                 print(f"TOP {args.limit} scores, listed in reverse order.")
+                elapsed = tqdm.format_interval(
+                    progress_bar.format_dict["elapsed"]
+                )
+                print(f"Elapsed: {elapsed}")
 
             else:
                 raise NotImplementedError()
