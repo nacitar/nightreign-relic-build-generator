@@ -11,7 +11,7 @@ from typing import Sequence
 from .finder import get_top_builds
 from .nightreign import (
     CLASS_URNS,
-    UNIVERSAL_URNS,
+    NEW_CLASS_URNS,
     Database,
     Relic,
     load_save_file,
@@ -232,21 +232,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry: {save_data.title}")
         database = Database()
+        # database.dump_new_format(Path("new_items.json"))
         relics: list[Relic] = []
-        deep_relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
+        deep_count = 0
         for relic_data in save_data.relics:
             relic = database.get_relic(relic_data)
             if relic.is_incomplete:
                 incomplete_relics.append(relic)
-            elif relic.deep:
-                deep_relics.append(relic)
             else:
                 relics.append(relic)
+                if relic.color.is_deep:
+                    deep_count += 1
 
         relic_count_str = (
-                f"Relics: {len(relics)} standard, {len(deep_relics)} deep"
-                f", {len(incomplete_relics)} incomplete."
+            f"Relics: {len(relics) - deep_count} standard, {deep_count} deep"
+            f", {len(incomplete_relics)} incomplete."
         )
         logger.info(relic_count_str)
         if incomplete_relics:
@@ -269,7 +270,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print("")
             print("")
             print(relic_count_str)
-            print("TODO: deep relics were ignored")
         else:
             incomplete_relics.clear()  # free this memory
             if args.operation == "compute":
@@ -278,14 +278,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 elif args.builtin_scores:
                     score_table = get_builtin_scores(args.builtin_scores)
 
-                urns = set(UNIVERSAL_URNS.values())
-                if args.character_class != "universal":
-                    urns.update(CLASS_URNS[args.character_class].values())
+                urn_tree = NEW_CLASS_URNS[args.character_class]
 
                 for build in reversed(
                     get_top_builds(
                         relics,
-                        urns,
+                        urn_tree,
                         score_table=score_table,
                         count=args.limit,
                         prune=args.prune,

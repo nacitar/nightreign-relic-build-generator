@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
 import struct
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from enum import Enum, StrEnum, auto, unique
 from functools import cached_property
 from pathlib import Path
 from types import MappingProxyType
-from typing import ByteString, ClassVar, Mapping, cast
+from typing import ByteString, ClassVar, Iterator, Mapping, Sequence, cast
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -301,22 +302,36 @@ class Color(StrEnum):
     GREEN = "Green"
     RED = "Red"
     YELLOW = "Yellow"
+    DEEP_BLUE = "DeepBlue"
+    DEEP_GREEN = "DeepGreen"
+    DEEP_RED = "DeepRed"
+    DEEP_YELLOW = "DeepYellow"
+
     UNKNOWN = "UNKNOWN"
 
     @property
     def alias(self) -> str:
         match self:
-            case Color.BLUE:
+            case Color.BLUE | Color.DEEP_BLUE:
                 return "Drizzly"
-            case Color.GREEN:
+            case Color.GREEN | Color.DEEP_GREEN:
                 return "Tranquil"
-            case Color.RED:
+            case Color.RED | Color.DEEP_RED:
                 return "Burning"
-            case Color.YELLOW:
+            case Color.YELLOW | Color.DEEP_YELLOW:
                 return "Luminous"
             case Color.UNKNOWN:
                 return "UNKNOWN"
         raise NotImplementedError()
+
+    @property
+    def is_deep(self) -> bool:
+        return self in (
+            Color.DEEP_BLUE,
+            Color.DEEP_GREEN,
+            Color.DEEP_RED,
+            Color.DEEP_YELLOW,
+        )
 
 
 @dataclass(frozen=True)
@@ -340,12 +355,20 @@ class Effect:
 @dataclass(frozen=True)
 class Relic:
     UNKNOWN_PREFIX: ClassVar[str] = "UNKNOWN_ID_"
+    SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
     color: Color
     size: int
     name: str
-    deep: bool
     effects: tuple[Effect, ...]
     save_offset: int | None = None  # only used for debugging
+
+    @classmethod
+    def standard_name(cls, color: Color, size: int) -> str:
+        # TODO: validate size?
+        name = " ".join([cls.SIZE_NAMES[size - 1], color.alias, "Scene"])
+        if color.is_deep:
+            name = f"Deep {name}"
+        return name
 
     @property
     def is_incomplete(self) -> bool:
@@ -355,8 +378,7 @@ class Relic:
         )
 
     def __str__(self) -> str:
-        deep_prefix = "DEEP " if self.deep else ""
-        lines: list[str] = [f"[{deep_prefix}{self.color}] {self.name}"]
+        lines: list[str] = [f"[{self.color}] {self.name}"]
         for effect in self.effects:
             lines.append(f"- {effect}")
         return os.linesep.join(lines)
@@ -368,7 +390,6 @@ class Database:
     class _RelicMetadata:
         color: Color
         size: int
-        deep: bool
 
     @dataclass(frozen=True)
     class _EffectMetadata:
@@ -483,7 +504,6 @@ class Database:
                 name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
                 save_offset=data.save_offset,
-                deep=False,  # TODO: indeterminate?
             )
         if info.size != len(data.effect_ids):
             raise AssertionError(
@@ -496,72 +516,44 @@ class Database:
                 f" for relic id {data.item_id}"
             )
 
-        standard_name = " ".join(
-            [type(self).SIZE_NAMES[info.size - 1], info.color.alias, "Scene"]
-        )
-        name = self.relic_names.get(data.item_id)
+        name = self.relic_names.get(data.item_id, "")
         if not name:
-            name = standard_name
-        elif name != standard_name:
-            logger.debug(
-                f"database has non-standard name for relic id"
-                f" {data.item_id}: {name}"
-            )
+            name = Relic.standard_name(info.color, info.size)
         return Relic(
             color=info.color,
             size=info.size,
-            name=self.relic_names.get(data.item_id, standard_name),
+            name=name,
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
             save_offset=data.save_offset,
-            deep=info.deep,
         )
 
     def load_from_save_editor(self) -> None:
         effect_data: dict[str, dict[str, str]] = get_resource_json(
             "effects.json"
         )
-        item_data: dict[str, dict[str, str]] = get_resource_json("items.json")
+        item_data: dict[str, dict[str, str]] = get_resource_json(
+            "new_items.json"
+        )
 
         for item_id, attributes in item_data.items():
-            color_str = attributes.get("color", "")
+            color_str = attributes["color"]
             try:
-                color = Color[color_str.upper()]
+                color = Color(color_str)
             except KeyError:
                 logger.error(f'Skipping {item_id}: bad color "{color_str}"')
                 continue
 
-            name = attributes.get("name", "")
-            if not name:
-                logger.error(f"Skipping {item_id}: no name provided")
+            size = int(attributes["size"])
+            if not (1 <= size <= 3):
+                logger.error(f'Skipping {item_id}: bad size "{size}"')
                 continue
-            deep = name.startswith("Deep")
-            size_word_offset = 0 if not deep else 1
-            try:
-                size = (
-                    type(self).SIZE_NAMES.index(
-                        name.split(" ", 2)[size_word_offset]
-                    )
-                    + 1
-                )
-            except ValueError:
-                size = {
-                    "Torn Braided Cord": 2,
-                    "Old Pocketwatch": 2,
-                    "Small Makeup Brush": 2,
-                    "Slate Whetstone": 2,
-                    "Golden Dew": 2,
-                    "Night of the Beast": 2,
-                    "Vestige of Night": 2,
-                    "Blessed Flowers": 2,
-                    "Stone Stake": 2,
-                    "Cracked Sealing Wax": 2,
-                    "Third Volume": 2,
-                    "Crown Medal": 2,
-                    "Besmirched Frame": 2,
-                }.get(name, 3)
-                logger.debug(f"Assuming {item_id} has {size} effects: {name}")
+
+            standard_name = Relic.standard_name(color, size)
+            name = attributes.get("name", "")
+            if name != standard_name:
+                self.relic_names[int(item_id)] = name
             self.relic_id_to_info[int(item_id)] = type(self)._RelicMetadata(
-                color=color, size=size, deep=deep
+                color=color, size=size
             )
 
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
@@ -579,11 +571,57 @@ class Database:
     def __post_init__(self) -> None:
         self.load_from_save_editor()
 
+    def dump_new_format(self, path: Path) -> None:
+        output: dict[int, dict[str, str | int]] = {}
+        for id in sorted(self.relic_id_to_info.keys()):
+            info = self.relic_id_to_info[id]
+            standard_name = " ".join(
+                [
+                    type(self).SIZE_NAMES[info.size - 1],
+                    info.color.alias,
+                    "Scene",
+                ]
+            )
+            color = info.color
 
-UNIVERSAL_URNS: dict[str, tuple[Color | None, Color | None, Color | None]] = {
-    "Sacred Erdtree Grail": (Color.YELLOW, Color.YELLOW, Color.YELLOW),
-    "Spirit Shelter Grail": (Color.GREEN, Color.GREEN, Color.GREEN),
-    "Giant's Cradle Grail": (Color.BLUE, Color.BLUE, Color.BLUE),
+            # if color.info.deep:
+            #    standard_name = f"Deep {standard_name}"
+            #    color = Color[f"DEEP_{color.name}"]
+            data = output.setdefault(id, {})
+            saved_name = self.relic_names.get(id, standard_name)
+            if saved_name != standard_name:
+                data["name"] = saved_name
+            data["size"] = info.size
+            data["color"] = color
+        with path.open("w") as handle:
+            json.dump(output, handle, indent=4)
+
+
+UNIVERSAL_URNS: dict[str, Sequence[Color | None]] = {
+    "Sacred Erdtree Grail": (
+        Color.YELLOW,
+        Color.YELLOW,
+        Color.YELLOW,
+        Color.DEEP_YELLOW,
+        Color.DEEP_YELLOW,
+        Color.DEEP_YELLOW,
+    ),
+    "Spirit Shelter Grail": (
+        Color.GREEN,
+        Color.GREEN,
+        Color.GREEN,
+        Color.DEEP_GREEN,
+        Color.DEEP_GREEN,
+        Color.DEEP_GREEN,
+    ),
+    "Giant's Cradle Grail": (
+        Color.BLUE,
+        Color.BLUE,
+        Color.BLUE,
+        Color.DEEP_BLUE,
+        Color.DEEP_BLUE,
+        Color.DEEP_BLUE,
+    ),
 }
 
 CLASS_URNS: dict[
@@ -645,4 +683,460 @@ CLASS_URNS: dict[
         "Soot-Covered Wylder's Urn": (Color.BLUE, Color.BLUE, Color.YELLOW),
         "Sealed Wylder's Urn": (Color.BLUE, Color.RED, Color.RED),
     },
+}
+
+
+@dataclass
+class UrnTree:
+    """
+    Trie-like tree of color requirements. Each edge key is a Color or None
+    (wildcard).  A node with no children is a leaf and represents a complete
+    pattern.
+    """
+
+    name: str = field(init=False, default="")
+    next: dict[Color | None, UrnTree] = field(init=False, default_factory=dict)
+
+    name_to_colors: InitVar[dict[str, Sequence[Color | None]] | None] = None
+
+    def __post_init__(
+        self, name_to_colors: dict[str, Sequence[Color | None]] | None
+    ) -> None:
+        if name_to_colors:
+            self.add(name_to_colors)
+
+    def add_single(self, name: str, colors: Sequence[Color | None]) -> None:
+        current = self
+        for color in colors:
+            try:
+                next_tree = current.next[color]
+            except KeyError:
+                next_tree = UrnTree()
+                current.next[color] = next_tree
+            current = next_tree
+        current.name = name
+
+    def add(self, name_to_colors: dict[str, Sequence[Color | None]]) -> None:
+        for name, colors in name_to_colors.items():
+            self.add_single(name, colors)
+
+    def get_permutations(
+        self, relics: Sequence[Relic]
+    ) -> Iterator[tuple[str, tuple[Relic | None, ...]]]:
+        count = len(relics)
+        positions_by_color: dict[Color, list[int]] = {}
+        all_non_deep_positions: list[int] = []
+        for position, relic in enumerate(relics):
+            positions_by_color.setdefault(relic.color, []).append(position)
+            if not relic.color.is_deep:
+                all_non_deep_positions.append(position)
+        position_in_use: list[bool] = [False] * count
+        chosen_positions: list[int | None] = []
+
+        def depth_first_search(
+            current_node: UrnTree,
+        ) -> Iterator[tuple[str, tuple[Relic | None, ...]]]:
+            # Leaf → emit the concrete selection for this path.
+            if current_node.name:
+                yield (
+                    current_node.name,
+                    tuple(
+                        relics[position] if position is not None else None
+                        for position in chosen_positions
+                    ),
+                )
+            # if not current_node.next:
+            #    return
+            # Deterministic traversal; None (wildcard) after concrete colors.
+            for required_color in sorted(
+                current_node.next.keys(),
+                key=lambda key: (key is None, str(key)),
+            ):
+                child_node = current_node.next[required_color]
+                if required_color is None:
+                    candidate_positions = all_non_deep_positions
+                else:
+                    candidate_positions = positions_by_color.get(
+                        required_color, []
+                    )
+                at_least_one = False
+                for position in candidate_positions:
+                    if position_in_use[position]:
+                        continue
+                    at_least_one = True
+                    position_in_use[position] = True
+                    chosen_positions.append(position)
+                    yield from depth_first_search(child_node)
+                    chosen_positions.pop()
+                    position_in_use[position] = False
+                if not at_least_one:
+                    chosen_positions.append(None)
+                    yield from depth_first_search(child_node)
+                    chosen_positions.pop()
+
+        yield from depth_first_search(self)
+
+
+NEW_CLASS_URNS: dict[str, UrnTree] = {
+    "universal": UrnTree(UNIVERSAL_URNS),
+    "duchess": UrnTree(
+        {
+            "Duchess' Urn": (
+                Color.RED,
+                Color.BLUE,
+                Color.BLUE,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+            ),
+            "Duchess' Goblet": (
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.GREEN,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+                Color.DEEP_GREEN,
+            ),
+            "Duchess' Chalice": (
+                Color.BLUE,
+                Color.YELLOW,
+                None,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Soot-Covered Duchess' Urn": (
+                Color.RED,
+                Color.RED,
+                Color.GREEN,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_GREEN,
+            ),
+            "Sealed Duchess' Urn": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+                Color.DEEP_YELLOW,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "executor": UrnTree(
+        {
+            "Executor's Urn": (
+                Color.RED,
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+            "Executor's Goblet": (
+                Color.RED,
+                Color.BLUE,
+                Color.GREEN,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+            ),
+            "Executor's Chalice": (
+                Color.BLUE,
+                Color.YELLOW,
+                None,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+                Color.DEEP_GREEN,
+            ),
+            "Soot-Covered Executor's Urn": (
+                Color.RED,
+                Color.RED,
+                Color.BLUE,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+            ),
+            "Sealed Executor's Urn": (
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+                Color.DEEP_BLUE,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "guardian": UrnTree(
+        {
+            "Guardian's Urn": (
+                Color.RED,
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+            "Guardian's Goblet": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.GREEN,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+            ),
+            "Guardian's Chalice": (
+                Color.BLUE,
+                Color.YELLOW,
+                None,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Soot-Covered Guardian's Urn": (
+                Color.RED,
+                Color.GREEN,
+                Color.GREEN,
+                Color.DEEP_RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+            ),
+            "Sealed Guardian's Urn": (
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+                Color.DEEP_BLUE,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "ironeye": UrnTree(
+        {
+            "Ironeye's Urn": (
+                Color.YELLOW,
+                Color.GREEN,
+                Color.GREEN,
+                Color.DEEP_YELLOW,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+            ),
+            "Ironeye's Goblet": (
+                Color.RED,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Ironeye's Chalice": (
+                Color.RED,
+                Color.GREEN,
+                None,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_GREEN,
+            ),
+            "Soot-Covered Ironeye's Urn": (
+                Color.BLUE,
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+            "Sealed Ironeye's Urn": (
+                Color.GREEN,
+                Color.GREEN,
+                Color.YELLOW,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_RED,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "raider": UrnTree(
+        {
+            "Raider's Urn": (
+                Color.RED,
+                Color.GREEN,
+                Color.GREEN,
+                Color.DEEP_RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+            ),
+            "Raider's Goblet": (
+                Color.RED,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Raider's Chalice": (
+                Color.RED,
+                Color.RED,
+                None,
+                Color.DEEP_RED,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+            "Soot-Covered Raider's Urn": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.GREEN,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+            ),
+            "Sealed Raider's Urn": (
+                Color.GREEN,
+                Color.GREEN,
+                Color.RED,
+                Color.DEEP_YELLOW,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "recluse": UrnTree(
+        {
+            "Recluse's Urn": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.GREEN,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+            ),
+            "Recluse's Goblet": (
+                Color.RED,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Recluse's Chalice": (
+                Color.YELLOW,
+                Color.GREEN,
+                None,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+            ),
+            "Soot-Covered Recluse's Urn": (
+                Color.RED,
+                Color.RED,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_YELLOW,
+            ),
+            "Sealed Recluse's Urn": (
+                Color.GREEN,
+                Color.BLUE,
+                Color.BLUE,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+                Color.DEEP_RED,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "revenant": UrnTree(
+        {
+            "Revenant's Urn": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Revenant's Goblet": (
+                Color.RED,
+                Color.RED,
+                Color.GREEN,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_GREEN,
+            ),
+            "Revenant's Chalice": (
+                Color.BLUE,
+                Color.GREEN,
+                None,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+                Color.DEEP_GREEN,
+            ),
+            "Soot-Covered Revenant's Urn": (
+                Color.RED,
+                Color.YELLOW,
+                Color.YELLOW,
+                Color.DEEP_RED,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+            "Sealed Revenant's Urn": (
+                Color.YELLOW,
+                Color.BLUE,
+                Color.BLUE,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+                Color.DEEP_RED,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
+    "wylder": UrnTree(
+        {
+            "Wylder's Urn": (
+                Color.RED,
+                Color.RED,
+                Color.BLUE,
+                Color.DEEP_RED,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+            ),
+            "Wylder's Goblet": (
+                Color.YELLOW,
+                Color.GREEN,
+                Color.GREEN,
+                Color.DEEP_YELLOW,
+                Color.DEEP_GREEN,
+                Color.DEEP_GREEN,
+            ),
+            "Wylder's Chalice": (
+                Color.RED,
+                Color.YELLOW,
+                None,
+                Color.DEEP_RED,
+                Color.DEEP_BLUE,
+                Color.DEEP_GREEN,
+            ),
+            "Soot-Covered Wylder's Urn": (
+                Color.BLUE,
+                Color.BLUE,
+                Color.YELLOW,
+                Color.DEEP_BLUE,
+                Color.DEEP_BLUE,
+                Color.DEEP_YELLOW,
+            ),
+            "Sealed Wylder's Urn": (
+                Color.BLUE,
+                Color.RED,
+                Color.RED,
+                Color.DEEP_GREEN,
+                Color.DEEP_YELLOW,
+                Color.DEEP_YELLOW,
+            ),
+        }
+        | UNIVERSAL_URNS
+    ),
 }

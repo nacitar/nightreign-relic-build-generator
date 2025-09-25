@@ -10,7 +10,7 @@ from typing import Generator, Iterable, Sequence
 
 from tqdm import tqdm
 
-from .nightreign import Color, Effect, Relic
+from .nightreign import Color, Effect, Relic, UrnTree
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class BuildHeap:
         score: int
         build: Build = field(compare=False)
 
-    _Signature = tuple[int, frozenset[Relic], frozenset[Effect]]
+    _Signature = tuple[int, frozenset[Relic | None], frozenset[Effect]]
 
     _heap: list[_Entry] = field(default_factory=list, init=False, repr=False)
     _signatures: set[_Signature] = field(
@@ -69,13 +69,17 @@ class ScoredEffects:
 
 @dataclass(frozen=True)
 class Build(ScoredEffects):
-    relics: tuple[Relic, ...]
+    urn_name: str
+    relics: tuple[Relic | None, ...]
 
     def __str__(self) -> str:
         lines: list[str] = []
-        lines.append(f"SCORE: {self.score}")
+        lines.append(f"SCORE: {self.score} - {self.urn_name}")
         for relic in self.relics:
-            lines.append(str(relic))
+            if relic is not None:
+                lines.append(str(relic))
+            else:
+                lines.append("<Empty Relic Slot>")
         return os.linesep.join(lines)
 
 
@@ -160,35 +164,43 @@ def get_relic_permutations(
 
 def get_builds(
     relics: Sequence[Relic],
-    urns: set[tuple[Color | None, Color | None, Color | None]],
+    urn_tree: UrnTree,
     *,
     score_table: dict[str, int],
     prune: int,
     minimum: int,
     progress_bar: bool,
 ) -> Generator[Build, None, None]:
-    for combination in get_relic_permutations(
-        relics,
-        urns,
-        score_table=score_table,
-        prune=prune,
-        progress_bar=progress_bar,
-    ):
+    # prune out relics with no contribution to the score
+    relics = [
+        relic
+        for relic in relics
+        if get_scored_effects(relic.effects, score_table=score_table).score
+        >= prune
+    ]
+    for urn_name_and_relics in urn_tree.get_permutations(relics):
+        urn_name, build_relics = urn_name_and_relics
         scored_effects = get_scored_effects(
-            [effect for relic in combination for effect in relic.effects],
+            [
+                effect
+                for relic in build_relics
+                if relic is not None
+                for effect in relic.effects
+            ],
             score_table=score_table,
         )
         if scored_effects.score >= minimum:
             yield Build(
+                urn_name=urn_name,
                 active_effects=scored_effects.active_effects,
                 score=scored_effects.score,
-                relics=combination,
+                relics=build_relics,
             )
 
 
 def get_top_builds(
     relics: Sequence[Relic],
-    urns: set[tuple[Color | None, Color | None, Color | None]],
+    urn_tree: UrnTree,
     *,
     score_table: dict[str, int],
     count: int,
@@ -199,7 +211,7 @@ def get_top_builds(
     top = BuildHeap(count)
     for build in get_builds(
         relics=relics,
-        urns=urns,
+        urn_tree=urn_tree,
         score_table=score_table,
         prune=prune,
         minimum=minimum,
