@@ -11,13 +11,7 @@ from typing import Sequence
 from tqdm import tqdm
 
 from .finder import get_top_builds
-from .nightreign import (
-    CLASS_URNS,
-    NEW_CLASS_URNS,
-    Database,
-    Relic,
-    load_save_file,
-)
+from .nightreign import CLASS_URNS, Database, Relic, load_save_file
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -256,6 +250,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("COMPLETE RELICS:")
             for relic in relics:
                 print(relic)
+                if relic.save_offset is not None:
+                    logger.debug(f"^ save offset: {relic.save_offset}")
             if incomplete_relics:
                 print("")
                 print("INCOMPLETE RELICS:")
@@ -275,7 +271,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 elif args.builtin_scores:
                     score_table = get_builtin_scores(args.builtin_scores)
 
-                urn_tree = NEW_CLASS_URNS[args.character_class]
+                urn_tree = CLASS_URNS[args.character_class]
 
                 print(
                     "Generating permutations; this can take several minutes..."

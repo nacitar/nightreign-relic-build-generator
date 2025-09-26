@@ -8,6 +8,7 @@ import struct
 from dataclasses import InitVar, dataclass, field
 from enum import Enum, StrEnum, auto, unique
 from functools import cached_property
+from itertools import chain
 from pathlib import Path
 from types import MappingProxyType
 from typing import ByteString, ClassVar, Iterator, Mapping, Sequence, cast
@@ -167,12 +168,12 @@ class Entity:
 class RelicData:
     item_id: int
     effect_ids: tuple[int, ...]
+    curse_ids: tuple[int, ...]
     save_offset: int
 
 
 @dataclass(frozen=True, kw_only=True)
 class SaveData:
-    _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     _REQUIRED_NON_EMPTY_COUNT: ClassVar[int] = 5
 
     data: bytes = field(repr=False)
@@ -206,10 +207,16 @@ class SaveData:
                         effect_ids=tuple(
                             effect_id
                             for effect_id in cast(
-                                tuple[int, int, int],
+                                tuple[int, ...],
                                 struct.unpack_from("<III", entity.data, 16),
                             )
-                            if effect_id != type(self)._EMPTY_EFFECT_ID
+                        ),
+                        curse_ids=tuple(
+                            effect_id
+                            for effect_id in cast(
+                                tuple[int, ...],
+                                struct.unpack_from("<III", entity.data, 56),
+                            )
                         ),
                         save_offset=offset,
                     )
@@ -336,8 +343,10 @@ class Color(StrEnum):
 
 @dataclass(frozen=True)
 class Effect:
+    _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     name: str
     level: int
+    id: int
     is_stackable: bool
     is_starting_imbue: bool
     is_starting_skill: bool
@@ -345,6 +354,10 @@ class Effect:
     @property
     def qualified_name(self) -> str:
         return f"{self.name} +{self.level}"
+
+    @property
+    def is_empty(self) -> bool:
+        return self.id == type(self)._EMPTY_EFFECT_ID
 
     def __str__(self) -> str:
         if not self.level:
@@ -360,7 +373,15 @@ class Relic:
     size: int
     name: str
     effects: tuple[Effect, ...]
+    curses: tuple[Effect, ...]
     save_offset: int | None = None  # only used for debugging
+
+    def __post_init__(self) -> None:
+        if len(self.effects) != len(self.curses):
+            raise ValueError("number of effects and curses must match.")
+        for i in range(len(self.effects)):
+            if self.effects[i].is_empty and not self.curses[i].is_empty:
+                raise ValueError("You can't have a curse on an empty effect.")
 
     @classmethod
     def standard_name(cls, color: Color, size: int) -> str:
@@ -374,13 +395,18 @@ class Relic:
     def is_incomplete(self) -> bool:
         return self.name.startswith(type(self).UNKNOWN_PREFIX) or any(
             effect.name.startswith(type(self).UNKNOWN_PREFIX)
-            for effect in self.effects
+            for effect in chain(self.effects, self.curses)
         )
 
     def __str__(self) -> str:
         lines: list[str] = [f"[{self.color}] {self.name}"]
-        for effect in self.effects:
-            lines.append(f"- {effect}")
+        for i in range(len(self.effects)):
+            effect = self.effects[i]
+            curse = self.curses[i]
+            if not effect.is_empty:
+                lines.append(f"+ {effect}")
+                if not curse.is_empty:
+                    lines.append(f"  - {curse}")
         return os.linesep.join(lines)
 
 
@@ -476,6 +502,7 @@ class Database:
             return Effect(
                 name=f"{Relic.UNKNOWN_PREFIX}EFFECT:{id}",
                 level=0,
+                id=id,
                 is_stackable=False,
                 is_starting_imbue=False,
                 is_starting_skill=False,
@@ -483,6 +510,7 @@ class Database:
         return Effect(
             name=info.name,
             level=info.level,
+            id=id,
             is_stackable=any(
                 pattern.match(info.name)
                 for pattern in type(self).STACKABLE_REGEX
@@ -497,18 +525,24 @@ class Database:
 
     def get_relic(self, data: RelicData) -> Relic:
         info = self.relic_id_to_info.get(data.item_id)
+        effects = tuple(self.get_effect(id) for id in data.effect_ids)
+        filled_effect_count = sum(
+            1 for effect in effects if not effect.is_empty
+        )
+
         if not info:
             return Relic(
                 color=Color.UNKNOWN,
                 size=len(data.effect_ids),
                 name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
+                curses=tuple(self.get_effect(id) for id in data.curse_ids),
                 save_offset=data.save_offset,
             )
-        if info.size != len(data.effect_ids):
+        if info.size != filled_effect_count:
             raise AssertionError(
                 f"relic id {data.item_id} is size {info.size} but has"
-                f" {len(data.effect_ids)} effects."
+                f" {filled_effect_count} effects."
             )
         if info.size not in range(1, len(type(self).SIZE_NAMES) + 1):
             raise AssertionError(
@@ -524,6 +558,7 @@ class Database:
             size=info.size,
             name=name,
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
+            curses=tuple(self.get_effect(id) for id in data.curse_ids),
             save_offset=data.save_offset,
         )
 
@@ -531,9 +566,7 @@ class Database:
         effect_data: dict[str, dict[str, str]] = get_resource_json(
             "effects.json"
         )
-        item_data: dict[str, dict[str, str]] = get_resource_json(
-            "new_items.json"
-        )
+        item_data: dict[str, dict[str, str]] = get_resource_json("items.json")
 
         for item_id, attributes in item_data.items():
             color_str = attributes["color"]
@@ -595,95 +628,6 @@ class Database:
             data["color"] = color
         with path.open("w") as handle:
             json.dump(output, handle, indent=4)
-
-
-UNIVERSAL_URNS: dict[str, Sequence[Color | None]] = {
-    "Sacred Erdtree Grail": (
-        Color.YELLOW,
-        Color.YELLOW,
-        Color.YELLOW,
-        Color.DEEP_YELLOW,
-        Color.DEEP_YELLOW,
-        Color.DEEP_YELLOW,
-    ),
-    "Spirit Shelter Grail": (
-        Color.GREEN,
-        Color.GREEN,
-        Color.GREEN,
-        Color.DEEP_GREEN,
-        Color.DEEP_GREEN,
-        Color.DEEP_GREEN,
-    ),
-    "Giant's Cradle Grail": (
-        Color.BLUE,
-        Color.BLUE,
-        Color.BLUE,
-        Color.DEEP_BLUE,
-        Color.DEEP_BLUE,
-        Color.DEEP_BLUE,
-    ),
-}
-
-CLASS_URNS: dict[
-    str, dict[str, tuple[Color | None, Color | None, Color | None]]
-] = {
-    "duchess": {
-        "Duchess' Urn": (Color.RED, Color.BLUE, Color.BLUE),
-        "Duchess' Goblet": (Color.YELLOW, Color.YELLOW, Color.GREEN),
-        "Duchess' Chalice": (Color.BLUE, Color.YELLOW, None),
-        "Soot-Covered Duchess' Urn": (Color.RED, Color.RED, Color.GREEN),
-        "Sealed Duchess' Urn": (Color.BLUE, Color.BLUE, Color.RED),
-    },
-    "executor": {
-        "Executor's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-        "Executor's Goblet": (Color.RED, Color.BLUE, Color.GREEN),
-        "Executor's Chalice": (Color.BLUE, Color.YELLOW, None),
-        "Soot-Covered Executor's Urn": (Color.RED, Color.RED, Color.BLUE),
-        "Sealed Executor's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
-    },
-    "guardian": {
-        "Guardian's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-        "Guardian's Goblet": (Color.BLUE, Color.BLUE, Color.GREEN),
-        "Guardian's Chalice": (Color.BLUE, Color.YELLOW, None),
-        "Soot-Covered Guardian's Urn": (Color.RED, Color.GREEN, Color.GREEN),
-        "Sealed Guardian's Urn": (Color.YELLOW, Color.YELLOW, Color.RED),
-    },
-    "ironeye": {
-        "Ironeye's Urn": (Color.YELLOW, Color.GREEN, Color.GREEN),
-        "Ironeye's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
-        "Ironeye's Chalice": (Color.RED, Color.GREEN, None),
-        "Soot-Covered Ironeye's Urn": (Color.BLUE, Color.YELLOW, Color.YELLOW),
-        "Sealed Ironeye's Urn": (Color.GREEN, Color.GREEN, Color.YELLOW),
-    },
-    "raider": {
-        "Raider's Urn": (Color.RED, Color.GREEN, Color.GREEN),
-        "Raider's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
-        "Raider's Chalice": (Color.RED, Color.RED, None),
-        "Soot-Covered Raider's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
-        "Sealed Raider's Urn": (Color.GREEN, Color.GREEN, Color.RED),
-    },
-    "recluse": {
-        "Recluse's Urn": (Color.BLUE, Color.BLUE, Color.GREEN),
-        "Recluse's Goblet": (Color.RED, Color.BLUE, Color.YELLOW),
-        "Recluse's Chalice": (Color.YELLOW, Color.GREEN, None),
-        "Soot-Covered Recluse's Urn": (Color.RED, Color.RED, Color.YELLOW),
-        "Sealed Recluse's Urn": (Color.GREEN, Color.BLUE, Color.BLUE),
-    },
-    "revenant": {
-        "Revenant's Urn": (Color.BLUE, Color.BLUE, Color.YELLOW),
-        "Revenant's Goblet": (Color.RED, Color.RED, Color.GREEN),
-        "Revenant's Chalice": (Color.BLUE, Color.GREEN, None),
-        "Soot-Covered Revenant's Urn": (Color.RED, Color.YELLOW, Color.YELLOW),
-        "Sealed Revenant's Urn": (Color.YELLOW, Color.BLUE, Color.BLUE),
-    },
-    "wylder": {
-        "Wylder's Urn": (Color.RED, Color.RED, Color.BLUE),
-        "Wylder's Goblet": (Color.YELLOW, Color.GREEN, Color.GREEN),
-        "Wylder's Chalice": (Color.RED, Color.YELLOW, None),
-        "Soot-Covered Wylder's Urn": (Color.BLUE, Color.BLUE, Color.YELLOW),
-        "Sealed Wylder's Urn": (Color.BLUE, Color.RED, Color.RED),
-    },
-}
 
 
 @dataclass(eq=False)  # no eq so object provides hashability
@@ -777,7 +721,33 @@ class UrnTree:
         yield from depth_first_search(self)
 
 
-NEW_CLASS_URNS: dict[str, UrnTree] = {
+UNIVERSAL_URNS: dict[str, Sequence[Color | None]] = {
+    "Sacred Erdtree Grail": (
+        Color.YELLOW,
+        Color.YELLOW,
+        Color.YELLOW,
+        Color.DEEP_YELLOW,
+        Color.DEEP_YELLOW,
+        Color.DEEP_YELLOW,
+    ),
+    "Spirit Shelter Grail": (
+        Color.GREEN,
+        Color.GREEN,
+        Color.GREEN,
+        Color.DEEP_GREEN,
+        Color.DEEP_GREEN,
+        Color.DEEP_GREEN,
+    ),
+    "Giant's Cradle Grail": (
+        Color.BLUE,
+        Color.BLUE,
+        Color.BLUE,
+        Color.DEEP_BLUE,
+        Color.DEEP_BLUE,
+        Color.DEEP_BLUE,
+    ),
+}
+CLASS_URNS: dict[str, UrnTree] = {
     "universal": UrnTree(UNIVERSAL_URNS),
     "duchess": UrnTree(
         {
