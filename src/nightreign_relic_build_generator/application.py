@@ -8,14 +8,10 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
+from tqdm import tqdm
+
 from .finder import get_top_builds
-from .nightreign import (
-    CLASS_URNS,
-    UNIVERSAL_URNS,
-    Database,
-    Relic,
-    load_save_file,
-)
+from .nightreign import CLASS_URNS, Database, Relic, load_save_file
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -202,11 +198,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=int,
         default=1,
     )
-    compute_parser.add_argument(
-        "--no-progress-bar",
-        action="store_true",
-        help="Disables the progress bar typically rendered to stderr.",
-    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -232,21 +223,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry: {save_data.title}")
         database = Database()
+        # database.dump_new_format(Path("new_items.json"))
         relics: list[Relic] = []
-        deep_relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
+        deep_count = 0
         for relic_data in save_data.relics:
             relic = database.get_relic(relic_data)
             if relic.is_incomplete:
                 incomplete_relics.append(relic)
-            elif relic.deep:
-                deep_relics.append(relic)
             else:
                 relics.append(relic)
+                if relic.color.is_deep:
+                    deep_count += 1
 
         relic_count_str = (
-                f"Relics: {len(relics)} standard, {len(deep_relics)} deep"
-                f", {len(incomplete_relics)} incomplete."
+            f"Relics: {len(relics) - deep_count} standard, {deep_count} deep"
+            f", {len(incomplete_relics)} incomplete."
         )
         logger.info(relic_count_str)
         if incomplete_relics:
@@ -258,6 +250,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("COMPLETE RELICS:")
             for relic in relics:
                 print(relic)
+                if relic.save_offset is not None:
+                    logger.debug(f"^ save offset: {relic.save_offset}")
             if incomplete_relics:
                 print("")
                 print("INCOMPLETE RELICS:")
@@ -269,7 +263,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print("")
             print("")
             print(relic_count_str)
-            print("TODO: deep relics were ignored")
         else:
             incomplete_relics.clear()  # free this memory
             if args.operation == "compute":
@@ -278,26 +271,36 @@ def main(argv: Sequence[str] | None = None) -> int:
                 elif args.builtin_scores:
                     score_table = get_builtin_scores(args.builtin_scores)
 
-                urns = set(UNIVERSAL_URNS.values())
-                if args.character_class != "universal":
-                    urns.update(CLASS_URNS[args.character_class].values())
+                urn_tree = CLASS_URNS[args.character_class]
 
-                for build in reversed(
+                print(
+                    "Generating permutations; this can take several minutes..."
+                )
+                progress_bar = tqdm(
+                    desc="Scoring possible builds", unit=" builds"
+                )
+                top_builds = reversed(
                     get_top_builds(
                         relics,
-                        urns,
+                        urn_tree,
+                        progress_bar=progress_bar,
                         score_table=score_table,
                         count=args.limit,
                         prune=args.prune,
                         minimum=args.minimum,
-                        progress_bar=not args.no_progress_bar,
                     )
-                ):
+                )
+                progress_bar.close()
+                for build in top_builds:
                     print("")
                     print(build)
 
                 print("")
                 print(f"TOP {args.limit} scores, listed in reverse order.")
+                elapsed = tqdm.format_interval(
+                    progress_bar.format_dict["elapsed"]
+                )
+                print(f"Elapsed: {elapsed}")
 
             else:
                 raise NotImplementedError()

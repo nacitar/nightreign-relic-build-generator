@@ -251,6 +251,32 @@
   "6646100": {"name": "[Recluse] Improved Intelligence and Faith, Reduced Mind"},
   "6647000": {"name": "[Executor] Improved Vigor and Endurance, Reduced Arcane"},
   "6647100": {"name": "[Executor] Improved Dexterity and Arcane, Reduced Vigor"},
+
+  "6820000": {"name": "Taking Damage Causes Poison Buildup"},
+  "6820100": {"name": "Taking Damage Causes Rot Buildup"},
+  "6820200": {"name": "Taking Damage Causes Frost Buildup"},
+  "6820300": {"name": "Taking Damage Causes Blood Loss Buildup"},
+  "6820400": {"name": "Taking Damage Causes Madness Buildup"},
+  "6820500": {"name": "Taking Damage Causes Sleep Buildup"},
+  "6820600": {"name": "Taking Damage Causes Death Buildup"},
+  "6830000": {"name": "Reduced Strength and Intelligence"},
+  "6830100": {"name": "Reduced Dexterity and Faith"},
+  "6830200": {"name": "Reduced Intelligence and Dexterity"},
+  "6830300": {"name": "Reduced Faith and Strength"},
+  "6830400": {"name": "Reduced Vigor and Arcane"},
+  "6840000": {"name": "Reduced Rune Acquisition"},
+  "6840100": {"name": "Reduced Flask HP Restoration"},
+  "6840200": {"name": "Ultimate Art Charging Impaired"},
+  "6850200": {"name": "All Resistances Down"},
+  "6850500": {"name": "Near Death Reduces Max HP"},
+  "6850700": {"name": "More Damage Taken After Evasion"},
+  "6850800": {"name": "Repeated Evasions Lower Damage Negation"},
+  "6850900": {"name": "Reduced Damage Negation for Flask Usages"},
+  "6851200": {"name": "Lower Attack When Below Max HP"},
+  "6851300": {"name": "Poison Buildup When Below Max HP"},
+  "6851400": {"name": "Rot Buildup When Below Max HP"},
+  "6851700": {"name": "Near Death Reduces Max HP"},
+
   "7000000": {"name": "Vigor +1"},
   "7000001": {"name": "Vigor +2"},
   "7000002": {"name": "Vigor +3"},
@@ -861,7 +887,8 @@
   "8330602": {"name": "Reduced spell FP cost"},
   "8010001": {"name": "Raises maximum FP +1"},
   "8020201": {"name": "Improved stamina recovery +1"},
-  "8340102": {"name": "Projectile damage drop-off reduced +1"}
+  "8340102": {"name": "Projectile damage drop-off reduced +1"},
+  "4294967295": {"name": "EMPTY"}
 
 
 }

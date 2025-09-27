@@ -10,18 +10,18 @@ license = "Unlicense"
 requires-python = ">=3.11"
 dependencies = [
     "cryptography (>=45.0.6,<46.0.0)",
-    "tqdm (>=4.67.1,<5.0.0)",
-    "types-tqdm (>=4.67.0.20250809,<5.0.0.0)"
+    "types-tqdm (>=4.67.0.20250809,<5.0.0.0)",
+    "tqdm (>=4.67.1,<5.0.0)"
 ]
 
 [tool.poetry]
 packages = [{include = "nightreign_relic_build_generator", from = "src"}]
 
 [tool.poetry.group.dev.dependencies]
-black = "^25.1.0"
+black = "^25.9.0"
 flake8 = "^7.3.0"
 isort = "^6.0.1"
-mypy = "^1.17.1"
+mypy = "^1.18.2"
 pytest = "^8.4.2"
 
 [build-system]
