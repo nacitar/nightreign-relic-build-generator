@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 import re
@@ -382,10 +381,11 @@ class Relic:
         for i in range(len(self.effects)):
             if self.effects[i].is_empty and not self.curses[i].is_empty:
                 raise ValueError("You can't have a curse on an empty effect.")
+        if not (1 <= self.size <= len(type(self).SIZE_NAMES)):
+            raise ValueError(f"Invalid size: {self.size}")
 
     @classmethod
     def standard_name(cls, color: Color, size: int) -> str:
-        # TODO: validate size?
         name = " ".join([cls.SIZE_NAMES[size - 1], color.alias, "Scene"])
         if color.is_deep:
             name = f"Deep {name}"
@@ -562,7 +562,7 @@ class Database:
             save_offset=data.save_offset,
         )
 
-    def load_from_save_editor(self) -> None:
+    def __post_init__(self) -> None:
         effect_data: dict[str, dict[str, str]] = get_resource_json(
             "effects.json"
         )
@@ -600,34 +600,6 @@ class Database:
             effect_info = type(self)._EffectMetadata(name, level)
             self.effect_id_to_info[int(effect_id)] = effect_info
             logger.debug(f"Added effect: {effect_id} {effect_info}")
-
-    def __post_init__(self) -> None:
-        self.load_from_save_editor()
-
-    def dump_new_format(self, path: Path) -> None:
-        output: dict[int, dict[str, str | int]] = {}
-        for id in sorted(self.relic_id_to_info.keys()):
-            info = self.relic_id_to_info[id]
-            standard_name = " ".join(
-                [
-                    type(self).SIZE_NAMES[info.size - 1],
-                    info.color.alias,
-                    "Scene",
-                ]
-            )
-            color = info.color
-
-            # if color.info.deep:
-            #    standard_name = f"Deep {standard_name}"
-            #    color = Color[f"DEEP_{color.name}"]
-            data = output.setdefault(id, {})
-            saved_name = self.relic_names.get(id, standard_name)
-            if saved_name != standard_name:
-                data["name"] = saved_name
-            data["size"] = info.size
-            data["color"] = color
-        with path.open("w") as handle:
-            json.dump(output, handle, indent=4)
 
 
 @dataclass(eq=False)  # no eq so object provides hashability
