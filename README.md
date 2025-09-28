@@ -106,11 +106,11 @@ ONE of these score file arguments:
 Non-exclusive arguments:
 - -c/--character-class, the name of the class whose urns are used
 - -l/--limit, the number of top-scoring builds to keep (default 50)
+- -n/--no-deep, pass this flag to score builds leaving deep relic slots empty
 
 Power-user options you probably don't want to change:
 - -m/--minimum, the minimum score requires to keep a build (default 1)
 - -p/--prune, the minimum score a relic must have to be considered (default 1)
-- --no-progress-bar, disables the progress bar printed to stderr
 
 An example invocation using the urns for raider and using the builtin score
 table I've created as an example for raider:
