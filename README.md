@@ -107,6 +107,7 @@ Non-exclusive arguments:
 - -c/--character-class, the name of the class whose urns are used
 - -l/--limit, the number of top-scoring builds to keep (default 50)
 - -n/--no-deep, pass this flag to score builds leaving deep relic slots empty
+- --no-color, disabled colorized output (NOTE: colors are Linux only)
 
 Power-user options you probably don't want to change:
 - -m/--minimum, the minimum score requires to keep a build (default 1)

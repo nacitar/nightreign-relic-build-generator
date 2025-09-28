@@ -15,6 +15,7 @@ from typing import ByteString, ClassVar, Iterator, Mapping, Sequence, cast
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
+from .term_style import TermStyle
 from .utility import get_resource_json
 
 logger = logging.getLogger(__name__)
@@ -399,14 +400,20 @@ class Relic:
         )
 
     def __str__(self) -> str:
-        lines: list[str] = [f"[{self.color}] {self.name}"]
+        lines: list[str] = [
+            f"{TermStyle.BOLD}[{self.color}] {self.name}{TermStyle.RESET}"
+        ]
         for i in range(len(self.effects)):
             effect = self.effects[i]
             curse = self.curses[i]
             if not effect.is_empty:
-                lines.append(f"  {effect}")
+                lines.append(
+                    f"{TermStyle.GREEN}  {effect}{TermStyle.RESET_COLOR}"
+                )
                 if not curse.is_empty:
-                    lines.append(f"  - {curse}")
+                    lines.append(
+                        f"{TermStyle.BLUE}  - {curse}{TermStyle.RESET_COLOR}"
+                    )
         return os.linesep.join(lines)
 
 

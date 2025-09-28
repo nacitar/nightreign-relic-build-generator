@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from .finder import get_top_builds
 from .nightreign import CLASS_URNS, Database, Relic, load_save_file
+from .term_style import TermStyle
 from .utility import (
     get_builtin_scores,
     list_builtin_score_resources,
@@ -202,10 +203,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "-n",
         "--no-deep",
         action="store_true",
-        help=(
-            "The minimum value that the effects of a relic must score in"
-            " order for that relic to be considered in selection."
-        ),
+        help="Disable consideration of deep relics to generate normal builds.",
+    )
+    compute_parser.add_argument(
+        "--no-color", action="store_true", help="Disable colorized output."
     )
     args = parser.parse_args(args=argv)
 
@@ -277,6 +278,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             incomplete_relics.clear()  # free this memory
             if args.operation == "compute":
+                if args.no_color:
+                    TermStyle.set_enabled(False)
                 if args.scores:
                     score_table = load_scores(Path(args.scores))
                 elif args.builtin_scores:
