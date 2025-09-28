@@ -470,8 +470,8 @@ def get_top_builds(
                 used[index] = False
                 scorer.pop_context(token)
 
-            # allow “empty” slot for None if nothing was usable
-            if required_color is None and not used_any:
+            # allow “empty” slot if nothing was usable
+            if not used_any:
                 chosen_indices.append(None)
                 depth_first_search(child)
                 chosen_indices.pop()

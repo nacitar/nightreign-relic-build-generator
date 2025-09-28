@@ -404,7 +404,7 @@ class Relic:
             effect = self.effects[i]
             curse = self.curses[i]
             if not effect.is_empty:
-                lines.append(f"+ {effect}")
+                lines.append(f"  {effect}")
                 if not curse.is_empty:
                     lines.append(f"  - {curse}")
         return os.linesep.join(lines)

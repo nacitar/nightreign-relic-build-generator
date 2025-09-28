@@ -198,6 +198,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         type=int,
         default=1,
     )
+    compute_parser.add_argument(
+        "-n",
+        "--no-deep",
+        action="store_true",
+        help=(
+            "The minimum value that the effects of a relic must score in"
+            " order for that relic to be considered in selection."
+        ),
+    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -232,9 +241,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             if relic.is_incomplete:
                 incomplete_relics.append(relic)
             else:
-                relics.append(relic)
                 if relic.color.is_deep:
                     deep_count += 1
+                    if args.operation == "compute" and args.no_deep:
+                        continue
+                relics.append(relic)
 
         relic_count_str = (
             f"Relics: {len(relics) - deep_count} standard, {deep_count} deep"
