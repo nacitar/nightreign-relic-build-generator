@@ -523,7 +523,7 @@ class Database:
                     added_entries += 1
         return added_entries
 
-    def as_json(self) -> dict[str, dict[str, str | int]]:
+    def as_dict(self) -> dict[str, dict[str, str | int]]:
         output: dict[str, dict[str, str | int]] = {}
         for id in sorted(self.relic_id_to_info.keys()):
             metadata = self.relic_id_to_info[id]

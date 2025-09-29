@@ -240,7 +240,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             new_file = Path("new_items.json")
             with new_file.open("w", encoding="utf-8") as handle:
                 json5.dump(
-                    database.as_json(),
+                    database.as_dict(),
                     handle,
                     indent=4,
                     quote_keys=True,
