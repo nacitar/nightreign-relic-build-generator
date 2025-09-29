@@ -51,7 +51,7 @@ class TermStyle(StrEnum):
                 check=False,
             ).stdout
         except FileNotFoundError:
-            logger.warning("tput not in path, returning an empty string.")
+            logger.debug("tput not in path, returning an empty string.")
             return ""
 
     @cached_property
