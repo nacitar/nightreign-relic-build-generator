@@ -505,9 +505,8 @@ class Database:
 
     def add_inferred_item_metadata(self) -> int:
         added_entries = 0
-        original_relic_id_to_info = dict(self.relic_id_to_info)
-        for id in sorted(original_relic_id_to_info.keys()):
-            metadata = original_relic_id_to_info[id]
+        for id in sorted(self.relic_id_to_info.keys()):
+            metadata = self.relic_id_to_info[id]
             custom_name = self.relic_names.get(id, "")
             if custom_name:
                 continue
