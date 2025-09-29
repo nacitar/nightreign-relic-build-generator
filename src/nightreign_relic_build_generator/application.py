@@ -8,6 +8,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
+import json5
 from tqdm import tqdm
 
 from .finder import get_top_builds
@@ -144,6 +145,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Dumps a list of all parsed relics.",
     )
 
+    subparsers.add_parser(
+        "item-database-updater",
+        parents=[common],
+        help="Updates the item database with reasonably inferred values.",
+    )
+
     compute_parser = subparsers.add_parser(
         "compute",
         parents=[common],
@@ -227,13 +234,30 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.operation == "list-builtins":
         for resource_name in list_builtin_score_resources():
             print(resource_name)
+    elif args.operation == "item-database-updater":
+        database = Database()
+        if added_count := database.add_inferred_item_metadata():
+            new_file = Path("new_items.json")
+            with new_file.open("w", encoding="utf-8") as handle:
+                json5.dump(
+                    database.as_json(),
+                    handle,
+                    indent=4,
+                    quote_keys=True,
+                    trailing_commas=False,
+                )
+            print(f"Added {added_count} entries to new file: {new_file}")
+            print(
+                "You must manually update resources/items.json to apply this."
+            )
+        else:
+            print("No new entries inferred; no file written.")
     elif args.operation in ("dump-relics", "compute"):
         save_title = f"USER_DATA{args.index:03d}"
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry: {save_data.title}")
         database = Database()
-        # database.dump_new_format(Path("new_items.json"))
         relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
         deep_count = 0
@@ -305,6 +329,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     )
                 )
                 progress_bar.close()
+
                 for build in top_builds:
                     print("")
                     print(build)

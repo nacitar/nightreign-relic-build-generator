@@ -503,6 +503,38 @@ class Database:
         init=False, default_factory=dict
     )
 
+    def add_inferred_item_metadata(self) -> int:
+        added_entries = 0
+        original_relic_id_to_info = dict(self.relic_id_to_info)
+        for id in sorted(original_relic_id_to_info.keys()):
+            metadata = original_relic_id_to_info[id]
+            custom_name = self.relic_names.get(id, "")
+            if custom_name:
+                continue
+            group_start = id - metadata.size + 1
+            for entry_id in range(group_start, group_start + 3):
+                entry = self.relic_id_to_info.get(entry_id)
+                if entry is None:
+                    self.relic_id_to_info[entry_id] = type(
+                        self
+                    )._RelicMetadata(
+                        color=metadata.color, size=(entry_id - group_start + 1)
+                    )
+                    added_entries += 1
+        return added_entries
+
+    def as_json(self) -> dict[str, dict[str, str | int]]:
+        output: dict[str, dict[str, str | int]] = {}
+        for id in sorted(self.relic_id_to_info.keys()):
+            metadata = self.relic_id_to_info[id]
+            entry: dict[str, str | int] = {}
+            if name := self.relic_names.get(id, ""):
+                entry["name"] = name
+            entry["size"] = metadata.size
+            entry["color"] = metadata.color.value
+            output[str(id)] = entry
+        return output
+
     def get_effect(self, id: int) -> Effect:
         info = self.effect_id_to_info.get(id)
         if not info:
@@ -573,10 +605,12 @@ class Database:
         effect_data: dict[str, dict[str, str]] = get_resource_json(
             "effects.json"
         )
-        item_data: dict[str, dict[str, str]] = get_resource_json("items.json")
+        item_data: dict[str, dict[str, str | int]] = get_resource_json(
+            "items.json"
+        )
 
         for item_id, attributes in item_data.items():
-            color_str = attributes["color"]
+            color_str = str(attributes["color"])
             try:
                 color = Color(color_str)
             except KeyError:
@@ -589,7 +623,7 @@ class Database:
                 continue
 
             standard_name = Relic.standard_name(color, size)
-            name = attributes.get("name", "")
+            name = str(attributes.get("name", ""))
             if name != standard_name:
                 self.relic_names[int(item_id)] = name
             self.relic_id_to_info[int(item_id)] = type(self)._RelicMetadata(
@@ -597,8 +631,10 @@ class Database:
             )
 
         suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
-        for effect_id, attributes in effect_data.items():
-            name = attributes["name"]
+        effect_id: str | int
+        for effect_id, effect_attributes in effect_data.items():
+            effect_id = int(effect_id)
+            name = effect_attributes["name"]
             level = 0
             if match := suffix_pattern.search(name):
                 level = int(match.group("level"))

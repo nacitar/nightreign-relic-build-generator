@@ -9,8 +9,6 @@
     "Continuous HP Recovery": 10000000, // +2 each second
 
     // 10,000+ - effects that are actively desired, but not must have
-    "Improved Damage Negation at Low HP": 4000000,  // +25% when HP below 20%
-    "Slowly restore HP for self and nearby allies when HP is low": 300000,  // +0.5% +1 HP per second for 50s when HP below 20%
     "Improved Physical Damage Negation": 2000000,  // +10%, +10.5%, +12%
     "Attack power up when facing poison-afflicted enemy":      2000000,  // +10%, +16%, +20%
     //"Attack power up when facing frostbite-afflicted enemy": 2000000, // +10%
@@ -20,6 +18,8 @@
     "Physical Attack Up": 3000000,  // +3%, +4%, +5%, +8.5%, +10%
     "Switching Weapons Boosts Attack Power": 300000, // +10% for 10s
     "Changes compatible armament's skill to Rain of Arrows at start of expedition": 100000,
+    "Slowly restore HP for self and nearby allies when HP is low": 100000,  // +0.5% +1 HP per second for 50s when HP below 20%
+    "Improved Damage Negation at Low HP": 1000000,  // +25% when HP below 20%
 
     "Improved Affinity Damage Negation": 50000,  // TODO: +??%
     "Fire Damage Negation Up": 50000,  // +10%, +15%, +16% 
@@ -35,7 +35,7 @@
     // 1,000+ - effects that always provide benefit
     "Increased Maximum HP": 5250,  // Vigor +5
     "Increased Maximum Stamina": 5250,  // Stamina +5
-    "Character Skill Cooldown Reduction": 2000, // -5%, -7.5%, -10%
+    "Character Skill Cooldown Reduction": 2000, // -0%, -5%, -7.5%, -10%
     "Vigor": 1050,
     "Dexterity": 1050,
     "Endurance": 1050,
