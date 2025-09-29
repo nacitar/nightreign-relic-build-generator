@@ -25,7 +25,9 @@ level of the effect to associate with the score (e.g.
 `Improved Critical Hits +1` or `Improved Critical Hits +0` for the non-plussed
 version).  If you choose to not specify a +<level> suffix, the tool assigns
 your score and *multiplies* it by (1+level); so +0 gets your score while +1
-is double your score and +2 is triple your score, etc...
+is double your score and +2 is triple your score, etc...  If you want to
+specify the SAME score for all levels, `Improved Critical Hits +*` would also
+work.
 
 # Efficiency
 Generating permutations of large collections of relics can be quite slow.  For

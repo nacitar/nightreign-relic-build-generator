@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import codecs
-import json
 import re
 from importlib.resources import files
 from pathlib import Path
 from typing import Any, ByteString
+
+import json5
 
 RESOURCE_FILES = files(f"{__package__}.resources")
 
@@ -21,7 +22,7 @@ def get_resource_text(name: str) -> str:
 
 
 def get_resource_json(name: str) -> Any:
-    return json.loads(get_resource_text(name))
+    return json5.loads(get_resource_text(name))
 
 
 def read_utf16le_string(data: ByteString, offset: int = 0) -> str:
@@ -58,7 +59,7 @@ def get_builtin_scores(name: str) -> dict[str, int]:
 
 
 def load_scores(path: Path) -> dict[str, int]:
-    return validate_scores(json.loads(path.read_text(encoding="utf-8")))
+    return validate_scores(json5.loads(path.read_text(encoding="utf-8")))
 
 
 def list_builtin_score_resources() -> list[str]:
