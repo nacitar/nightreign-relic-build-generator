@@ -147,7 +147,6 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     subparsers.add_parser(
         "item-database-updater",
-        parents=[common],
         help="Updates the item database with reasonably inferred values.",
     )
 
@@ -312,7 +311,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 urn_tree = CLASS_URNS[args.character_class]
 
                 print(
-                    "Generating permutations; this can take several minutes..."
+                    "Generating permutations; this can take anywhere from"
+                    " several minutes to an hour, depending upon your scores."
                 )
                 progress_bar = tqdm(
                     desc="Scoring possible builds", unit=" builds"
