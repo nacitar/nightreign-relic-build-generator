@@ -1,4 +1,7 @@
 {
+    // Undesirable effects/curses
+    //"More Damage Taken After Evasion": -1000000,
+
     // 10,000,000+ - must haves 
     "[Ironeye] +1 additional Character Skill use": 20000000,
     "Starting armament inflicts poison": 20000000,

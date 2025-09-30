@@ -385,6 +385,10 @@ class Relic:
         if not (1 <= self.size <= len(type(self).SIZE_NAMES)):
             raise ValueError(f"Invalid size: {self.size}")
 
+    @cached_property
+    def effects_and_curses(self) -> tuple[Effect, ...]:
+        return self.effects + self.curses
+
     @classmethod
     def standard_name(cls, color: Color, size: int) -> str:
         name = " ".join([cls.SIZE_NAMES[size - 1], color.alias, "Scene"])

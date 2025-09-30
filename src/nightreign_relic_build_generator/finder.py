@@ -185,7 +185,7 @@ class IncrementalScorer:
     def push_relic(self, relic: Relic) -> int:
         """Apply relic effects in order; return delta added now."""
         delta = 0
-        for effect in relic.effects:
+        for effect in relic.effects_and_curses:
             seen_key = (effect.name, effect.level)
 
             if (not effect.is_stackable) and (seen_key in self.seen_keys):
@@ -270,7 +270,9 @@ def get_top_builds(
     for relic in relics:
         # quick score for pruning/filtering: how much this relic
         # can contribute alone
-        se = get_scored_effects(relic.effects, score_table=score_table)
+        se = get_scored_effects(
+            relic.effects_and_curses, score_table=score_table
+        )
         if se.score >= prune:
             filtered_relics.append(relic)
             standalone_score_cache.append(se.score)

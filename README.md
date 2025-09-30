@@ -46,6 +46,14 @@ but it is an option nonetheless.
 You can also provide negative scores to any undesirable effects, but do keep in
 mind the pruning process and how it functions if you do that; I would generally
 advise against it as it could remove otherwise good relics from the pool.
+However, in the case of curses if any are unacceptable or require extreme
+motivation in order to accept, providing negative scores for them may help.
+
+*NOTE*: Having well defined tiers of effects with scores that are orders of
+magnitude different will make this much faster.  If you have lots of scores that
+are close in value, the algorithm can't exclude _obviously_ suboptimal
+solutions, and thus it has to check far more combinations.  The builtin scores
+for `ironeye_deep-of-night` provide an excellent example.
 
 # Usage
 This section assumes that the project is available and can be invoked via the
