@@ -1,21 +1,63 @@
 {
-    "[Ironeye] Character Skill Inflicts Heavy Poison Damage on Poisoned Enemies": 1000,
-    "Starting armament inflicts poison": 1000,
-    "[Ironeye] +1 additional Character Skill use": 1000,
-    "[Ironeye] Art Charge Activation Adds Poison Effect": 800,
-    "Attack power up when facing poison-afflicted enemy": 500,
-    "Physical Attack Up": 150,
-    "Improved Physical Damage Negation": 150,
-    "Slowly restore HP for self and nearby allies when HP is low": 100,
-    "Attack power increased for each evergaol prisoner defeated": 50,
+    // Undesirable effects/curses
+    //"More Damage Taken After Evasion": -1000000,
 
-    "Continuous HP Recovery": 20,
-    "Improved Damage Negation at Low HP": 20,
-    "Stamina Recovery upon Landing Attacks": 20,
+    // 10,000,000+ - must haves 
+    "[Ironeye] +1 additional Character Skill use": 20000000,
+    "Starting armament inflicts poison": 20000000,
+    //"Starting armament inflicts frost": 20000000,
+    //"Starting armament inflicts blood loss": 20000000,
+    "[Ironeye] Art Charge Activation Adds Poison Effect": 10000000,
+    "[Ironeye] Character Skill Inflicts Heavy Poison Damage on Poisoned Enemies": 10000000,  // skill inflicts 70 poison, 2.5% max HP + 250 damage
+    "Continuous HP Recovery": 10000000, // +2 each second
 
-    "Partial HP Restoration upon Post-Damage Attacks": 10,
-    "Taking attacks improves attack power": 10,
+    // 10,000+ - effects that are actively desired, but not must have
+    "Improved Physical Damage Negation": 2000000,  // +10%, +10.5%, +12%
+    "Attack power up when facing poison-afflicted enemy":      2000000,  // +10%, +16%, +20%
+    //"Attack power up when facing frostbite-afflicted enemy": 2000000, // +10%
+    "Improved Initial Standard Attack": 800000,  // +13%
+    "Improved Bow Attack Power": 500000,  // +6.5%
+    "HP Restoration upon Bow Attacks": 500000,  // +15hp per hit
+    "Physical Attack Up": 3000000,  // +3%, +4%, +5%, +8.5%, +10%
+    "Switching Weapons Boosts Attack Power": 300000, // +10% for 10s
+    "Changes compatible armament's skill to Rain of Arrows at start of expedition": 100000,
+    "Slowly restore HP for self and nearby allies when HP is low": 100000,  // +0.5% +1 HP per second for 50s when HP below 20%
+    "Improved Damage Negation at Low HP": 1000000,  // +25% when HP below 20%
 
-    "Stonesword Key in possession at start of expedition": 5,
-    "Small Pouch in possession at start of expedition": 1
+    "Improved Affinity Damage Negation": 50000,  // TODO: +??%
+    "Fire Damage Negation Up": 50000,  // +10%, +15%, +16% 
+    "Magic Damage Negation Up": 50000,  // +10%, +15%, +16% 
+    "Lightning Damage Negation Up": 50000,  // +10%, +15%, +16% 
+    "Holy Damage Negation Up": 50000,  // +10%, +15%, +16% 
+    "Improved Madness Resistance": 50000,  // +75 resistance
+    "Partial HP Restoration upon Post-Damage Attacks": 50000, // regain HP on hit after being hit
+    "Stamina Recovery upon Landing Attacks": 50000, // +2, +3 points per attack
+    "[Ironeye] Extends duration of weak point": 10000,  // +4.5s
+    "FP Restoration upon Bow Attacks": 10000,  // +2FP per hit
+
+    // 1,000+ - effects that always provide benefit
+    "Increased Maximum HP": 5250,  // Vigor +5
+    "Increased Maximum Stamina": 5250,  // Stamina +5
+    "Character Skill Cooldown Reduction": 2000, // -0%, -5%, -7.5%, -10%
+    "Vigor": 1050,
+    "Dexterity": 1050,
+    "Endurance": 1050,
+    "Arcane": 1050,
+    "Flask Also Heals Allies": 1000,
+    "Defeating enemies restores HP for allies but not for self": 1000,
+    "Raised stamina recovery for nearby allies, but not for self": 1000,
+
+    // 100+ - effects that are game dependent
+    "Improved Attack Power with 3+ Bows Equipped": 900, // +10% damage
+    "Attack power increased for each evergaol prisoner defeated": 800,  // +5% per evergaol boss
+    "Max HP increased for each great enemy defeated at a Great Church.": 800,  // +5% per boss
+    "Max stamina increased for each great enemy defeated at a Great Encampment": 800,  // +7.5% per boss
+    "Arcane increased for each great enemy defeated at a Ruin": 500,  // +4 Arcane per boss 
+    "Attack power increased for each Night Invader defeated": 300,  // +7%
+    "Runes and Item Discovery increased for each great enemy defeated at a Fort": 300,  // +16 discovery, +5.5% rune gamin per boss
+
+    // 0+ - nice but not important
+    "Small Pouch in possession at start of expedition": 100,
+    "Ultimate Art Gauge": 50,  // +5%, +7.5%, +10% idle gain
+    "Increased Maximum FP": 10,  // not likely to be useful
 }

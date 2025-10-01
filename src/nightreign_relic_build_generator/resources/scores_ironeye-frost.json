@@ -4,17 +4,17 @@
 
     // 10,000,000+ - must haves 
     "[Ironeye] +1 additional Character Skill use": 20000000,
-    "Starting armament inflicts poison": 20000000,
-    //"Starting armament inflicts frost": 20000000,
+    //"Starting armament inflicts poison": 20000000,
+    "Starting armament inflicts frost": 20000000,
     //"Starting armament inflicts blood loss": 20000000,
-    "[Ironeye] Art Charge Activation Adds Poison Effect": 10000000,
-    "[Ironeye] Character Skill Inflicts Heavy Poison Damage on Poisoned Enemies": 10000000,  // skill inflicts 70 poison, 2.5% max HP + 250 damage
+    //"[Ironeye] Art Charge Activation Adds Poison Effect": 10000000,
+    //"[Ironeye] Character Skill Inflicts Heavy Poison Damage on Poisoned Enemies": 10000000,  // skill inflicts 70 poison, 2.5% max HP + 250 damage
     "Continuous HP Recovery": 10000000, // +2 each second
 
     // 10,000+ - effects that are actively desired, but not must have
     "Improved Physical Damage Negation": 2000000,  // +10%, +10.5%, +12%
-    "Attack power up when facing poison-afflicted enemy":      2000000,  // +10%, +16%, +20%
-    //"Attack power up when facing frostbite-afflicted enemy": 2000000, // +10%
+    //"Attack power up when facing poison-afflicted enemy":      2000000,  // +10%, +16%, +20%
+    "Attack power up when facing frostbite-afflicted enemy": 2000000, // +10%
     "Improved Initial Standard Attack": 800000,  // +13%
     "Improved Bow Attack Power": 500000,  // +6.5%
     "HP Restoration upon Bow Attacks": 500000,  // +15hp per hit
