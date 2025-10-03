@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-import re
 import struct
 from dataclasses import InitVar, dataclass, field
 from enum import Enum, StrEnum, auto, unique
@@ -341,15 +340,18 @@ class Color(StrEnum):
         )
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Effect:
     _EMPTY_EFFECT_ID: ClassVar[int] = 0xFFFFFFFF
     name: str
     level: int
     id: int
-    is_stackable: bool
-    is_starting_imbue: bool
-    is_starting_skill: bool
+    stackable: bool
+    exclusive: str
+
+    def __post_init__(self) -> None:
+        if self.level < 0:
+            raise AssertionError(f"Level is negative: {self.level}")
 
     @property
     def qualified_name(self) -> str:
@@ -428,82 +430,12 @@ class Database:
         color: Color
         size: int
 
-    @dataclass(frozen=True)
-    class _EffectMetadata:
-        name: str
-        level: int
-
-        def __post_init__(self) -> None:
-            if self.level < 0:
-                raise AssertionError(f"Level is negative: {self.level}")
-
-    STACKABLE_REGEX: ClassVar[list[re.Pattern[str]]] = [
-        re.compile(
-            "^Improved (.+ )?("
-            + "|".join(
-                [
-                    "Attack Power",
-                    "Resistance",
-                    "Damage Negation",
-                    "Incantations",
-                    "Sorcery",
-                    "Damage",
-                ]
-            )
-            + ")( at (Low|Full) HP)?$"
-        ),
-        re.compile(
-            "^("
-            + "|".join(
-                [
-                    "Dexterity",
-                    "Endurance",
-                    "Faith",
-                    "Intelligence",
-                    "Mind",
-                    "Poise",
-                    "Strength",
-                    "Vigor",
-                    "Arcane",
-                ]
-            )
-            + ")$"
-        ),
-        re.compile(
-            "^Improved ("
-            + "|".join(
-                [
-                    "Guard Counters",
-                    "Initial Standard Attack",
-                    "Perfuming Arts",
-                    "Roar & Breath Attacks",
-                    "Stance-Breaking when .+",
-                ]
-            )
-            + ")$"
-        ),
-        re.compile("^Boosts Attack Power of Added Affinity Attacks$"),
-        re.compile("^FP Restoration upon Successive Attacks$"),
-        re.compile(
-            "^(?!Stonesword Key).* in possession at start of expedition$"
-        ),  # NOT STONESWORD KEY
-        re.compile("^Character Skill Cooldown Reduction$"),
-        re.compile("^Increased rune acquisition for self and allies$"),
-        re.compile("^Ultimate Art Gauge$"),
-    ]
-    STARTING_IMBUE_REGEX: ClassVar[re.Pattern[str]] = re.compile(
-        "^Starting armament (deals|inflicts) .+$"
-    )
-    STARTING_SKILL_REGEX: ClassVar[re.Pattern[str]] = re.compile(
-        "^Changes compatible armament's skill to .+$"
-    )
-
     SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
     relic_id_to_info: dict[int, _RelicMetadata] = field(
         init=False, default_factory=dict
     )
     relic_names: dict[int, str] = field(init=False, default_factory=dict)
-    effect_id_to_info: dict[int, _EffectMetadata] = field(
+    effect_id_to_effect: dict[int, Effect] = field(
         init=False, default_factory=dict
     )
 
@@ -526,7 +458,21 @@ class Database:
                     added_entries += 1
         return added_entries
 
-    def as_dict(self) -> dict[str, dict[str, str | int]]:
+    def effects_as_dict(self) -> dict[str, dict[str, str | bool | int]]:
+        output: dict[str, dict[str, str | bool | int]] = {}
+        for id in sorted(self.effect_id_to_effect.keys()):
+            effect = self.get_effect(id)
+            entry: dict[str, str | bool | int] = {}
+            entry["name"] = effect.name
+            if effect.level:
+                entry["level"] = effect.level
+            entry["stackable"] = effect.stackable
+            if effect.exclusive:
+                entry["exclusive"] = effect.exclusive
+            output[str(id)] = entry
+        return output
+
+    def items_as_dict(self) -> dict[str, dict[str, str | int]]:
         output: dict[str, dict[str, str | int]] = {}
         for id in sorted(self.relic_id_to_info.keys()):
             metadata = self.relic_id_to_info[id]
@@ -539,31 +485,16 @@ class Database:
         return output
 
     def get_effect(self, id: int) -> Effect:
-        info = self.effect_id_to_info.get(id)
+        info = self.effect_id_to_effect.get(id)
         if not info:
             return Effect(
                 name=f"{Relic.UNKNOWN_PREFIX}EFFECT:{id}",
                 level=0,
                 id=id,
-                is_stackable=False,
-                is_starting_imbue=False,
-                is_starting_skill=False,
+                stackable=False,
+                exclusive="",
             )
-        return Effect(
-            name=info.name,
-            level=info.level,
-            id=id,
-            is_stackable=any(
-                pattern.match(info.name)
-                for pattern in type(self).STACKABLE_REGEX
-            ),
-            is_starting_imbue=bool(
-                type(self).STARTING_IMBUE_REGEX.match(info.name)
-            ),
-            is_starting_skill=bool(
-                type(self).STARTING_SKILL_REGEX.match(info.name)
-            ),
-        )
+        return info
 
     def get_relic(self, data: RelicData) -> Relic:
         info = self.relic_id_to_info.get(data.item_id)
@@ -605,8 +536,8 @@ class Database:
         )
 
     def __post_init__(self) -> None:
-        effect_data: dict[str, dict[str, str]] = get_resource_json(
-            "effects.json"
+        effect_data: dict[str, dict[str, str | int | bool]] = (
+            get_resource_json("effects.json")
         )
         item_data: dict[str, dict[str, str | int]] = get_resource_json(
             "items.json"
@@ -633,18 +564,15 @@ class Database:
                 color=color, size=size
             )
 
-        suffix_pattern = re.compile(r" \+(?P<level>\d+)$")
-        effect_id: str | int
         for effect_id, effect_attributes in effect_data.items():
-            effect_id = int(effect_id)
-            name = effect_attributes["name"]
-            level = 0
-            if match := suffix_pattern.search(name):
-                level = int(match.group("level"))
-                name = name[: match.start()]
-
-            effect_info = type(self)._EffectMetadata(name, level)
-            self.effect_id_to_info[int(effect_id)] = effect_info
+            effect_info = Effect(
+                name=str(effect_attributes["name"]),
+                level=int(effect_attributes.get("level", 0)),
+                id=int(effect_id),
+                stackable=bool(effect_attributes["stackable"]),
+                exclusive=str(effect_attributes.get("exclusive", "")),
+            )
+            self.effect_id_to_effect[effect_info.id] = effect_info
             logger.debug(f"Added effect: {effect_id} {effect_info}")
 
 

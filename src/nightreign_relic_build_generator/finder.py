@@ -87,20 +87,18 @@ def get_scored_effects(
     score = 0
     seen: set[tuple[str, int]] = set()
     active: list[Effect] = []
-    has_starting_imbue = False
-    has_starting_skill = False
+    seen_exclusive: set[str] = set()  # tracks applied exclusive categories
     for effect in effects:
         seen_key = (effect.name, effect.level)
-        if effect.is_stackable or seen_key not in seen:
+        # respect non-stackable duplicates by (name, level)
+        if effect.stackable or seen_key not in seen:
             seen.add(seen_key)
-            if (not effect.is_starting_imbue or not has_starting_imbue) and (
-                not effect.is_starting_skill or not has_starting_skill
-            ):
-                has_starting_imbue |= effect.is_starting_imbue
-                has_starting_skill |= effect.is_starting_skill
+            # respect exclusive categories (e.g. "imbue", "skill", ...)
+            if not effect.exclusive or effect.exclusive not in seen_exclusive:
+                if effect.exclusive:
+                    seen_exclusive.add(effect.exclusive)
                 active.append(effect)
                 # allow for scores from "EffectName +N" specifically
-
                 if (
                     effect_score := score_table.get(
                         effect.qualified_name.lower()
@@ -129,8 +127,6 @@ def get_scored_effects(
 # Incremental scorer (order-aware)
 # -------------------------------
 
-# assume Effect and Relic are your types
-
 
 class ScoreChange(NamedTuple):
     kind: Literal["score"]
@@ -142,12 +138,9 @@ class SeenChange(NamedTuple):
     value: tuple[str, int]
 
 
-class ImbueFlagChange(NamedTuple):
-    kind: Literal["imbue_flag"]
-
-
-class SkillFlagChange(NamedTuple):
-    kind: Literal["skill_flag"]
+class ExclusiveFlagChange(NamedTuple):
+    kind: Literal["exclusive_flag"]
+    tag: str  # the exclusive category we marked as taken
 
 
 class PushEffectChange(NamedTuple):
@@ -155,9 +148,7 @@ class PushEffectChange(NamedTuple):
     value: Effect
 
 
-Change = Union[
-    ScoreChange, SeenChange, ImbueFlagChange, SkillFlagChange, PushEffectChange
-]
+Change = Union[ScoreChange, SeenChange, ExclusiveFlagChange, PushEffectChange]
 
 
 @dataclass
@@ -168,8 +159,7 @@ class IncrementalScorer:
 
     current_score: int = 0
     seen_keys: set[tuple[str, int]] = field(default_factory=set)
-    has_starting_imbue: bool = False
-    has_starting_skill: bool = False
+    exclusive_taken: set[str] = field(default_factory=set)
     active_effects_stack: list[Effect] = field(default_factory=list)
 
     _change_log: list[Change] = field(default_factory=list)
@@ -188,25 +178,30 @@ class IncrementalScorer:
         for effect in relic.effects_and_curses:
             seen_key = (effect.name, effect.level)
 
-            if (not effect.is_stackable) and (seen_key in self.seen_keys):
-                continue
-            if effect.is_starting_imbue and self.has_starting_imbue:
-                continue
-            if effect.is_starting_skill and self.has_starting_skill:
+            # block repeated non-stackable (name, level)
+            if (not effect.stackable) and (seen_key in self.seen_keys):
                 continue
 
-            if not effect.is_stackable:
+            # block additional effects of an already-taken exclusive category
+            if effect.exclusive and (effect.exclusive in self.exclusive_taken):
+                continue
+
+            # record newly seen non-stackable
+            if not effect.stackable:
                 self.seen_keys.add(seen_key)
                 self._change_log.append(SeenChange("seen", seen_key))
 
-            if effect.is_starting_imbue and not self.has_starting_imbue:
-                self.has_starting_imbue = True
-                self._change_log.append(ImbueFlagChange("imbue_flag"))
+            # record exclusive category if present and not previously taken
+            if (
+                effect.exclusive
+                and effect.exclusive not in self.exclusive_taken
+            ):
+                self.exclusive_taken.add(effect.exclusive)
+                self._change_log.append(
+                    ExclusiveFlagChange("exclusive_flag", effect.exclusive)
+                )
 
-            if effect.is_starting_skill and not self.has_starting_skill:
-                self.has_starting_skill = True
-                self._change_log.append(SkillFlagChange("skill_flag"))
-
+            # apply score
             s = self._score_of(effect)
             if s:
                 delta += s
@@ -231,10 +226,9 @@ class IncrementalScorer:
                 self.current_score -= change.value
             elif isinstance(change, SeenChange):
                 self.seen_keys.remove(change.value)
-            elif isinstance(change, ImbueFlagChange):
-                self.has_starting_imbue = False
-            elif isinstance(change, SkillFlagChange):
-                self.has_starting_skill = False
+            elif isinstance(change, ExclusiveFlagChange):
+                # undo the exclusive category we marked as taken
+                self.exclusive_taken.remove(change.tag)
             elif isinstance(change, PushEffectChange):
                 self.active_effects_stack.pop()
             else:
