@@ -33,20 +33,18 @@ def read_utf16le_string(data: ByteString, offset: int = 0) -> str:
     return codecs.decode(memoryview(data)[offset:end_offset], "utf-16le")
 
 
-def validate_scores(score_table: Any) -> dict[str, int]:
-    if not isinstance(score_table, dict):
-        raise ValueError(
-            f"root element not a dict: {type(score_table).__name__}"
-        )
-    for key, value in score_table.items():
-        if not isinstance(key, str):
-            raise ValueError(f"key not a str: {type(key).__name__} = {key}")
-        if not isinstance(value, int):
-            raise ValueError(f"value not an int: {type(key).__name__} = {key}")
-    lowercase_score_table: dict[str, int] = {
-        key.lower(): value for key, value in score_table.items()
-    }
-    return lowercase_score_table
+def _parse_scores_json_data(data: Any) -> dict[str, int]:
+    if not isinstance(data, dict):
+        raise ValueError(f"root element not a dict: {type(data).__name__}")
+    score_table: dict[str, int] = {}
+    for tier_score, effects in data.items():
+        if not isinstance(effects, list):
+            raise ValueError(
+                f"effects not a list: {type(effects).__name__} = {effects}"
+            )
+        for effect in effects:
+            score_table[str(effect).lower()] = int(tier_score)
+    return score_table
 
 
 SCORE_RESOURCE_PATTERN = re.compile(
@@ -55,11 +53,13 @@ SCORE_RESOURCE_PATTERN = re.compile(
 
 
 def get_builtin_scores(name: str) -> dict[str, int]:
-    return validate_scores(get_resource_json(f"scores_{name}.json"))
+    return _parse_scores_json_data(get_resource_json(f"scores_{name}.json"))
 
 
 def load_scores(path: Path) -> dict[str, int]:
-    return validate_scores(json5.loads(path.read_text(encoding="utf-8")))
+    return _parse_scores_json_data(
+        json5.loads(path.read_text(encoding="utf-8"))
+    )
 
 
 def list_builtin_score_resources() -> list[str]:

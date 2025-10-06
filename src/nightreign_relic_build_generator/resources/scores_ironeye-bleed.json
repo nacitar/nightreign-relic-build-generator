@@ -3,28 +3,31 @@
         //"More Damage Taken After Evasion",
     ],
     "1000000000": [  // MUST
-        "[Wylder] +1 additional Character Skill use",
-        "[Wylder] Art activation spreads fire in area",
-        "[Wylder] Standard attacks enhanced with fiery follow-ups when using Character Skill (greatsword only)",
-        "Continuous HP Recovery" // +2 each second
+        "[Ironeye] +1 additional Character Skill use",
+        "Starting armament inflicts blood loss",
+        "Continuous HP Recovery", // +2 each second
+        "HP Restoration upon Bow Attacks",  // +15hp per hit
     ],
     "100000000": [  // TIER 1
         "Physical Attack Up",  // +3%, +4%, +5%, +8.5%, +10%
         "Improved Initial Standard Attack",  // +13%
+        "Improved Bow Attack Power"  // +6.5%
     ],
     "10000000": [  // TIER 2
         "Slowly restore HP for self and nearby allies when HP is low",  // +0.5% +1 HP per second for 50s when HP below 20%
         "Improved Physical Damage Negation",  // +10%, +10.5%, +12%
+        "Changes compatible armament's skill to Rain of Arrows at start of expedition",
         "Improved Damage Negation at Low HP"  // +25% when HP below 20%
     ],
     "1000000": [  // TIER 3
-        "Character Skill Cooldown Reduction", // -0%, -5%, -7.5%, -10%
-        "[Raider] Damage taken while using Character Skill improves attack power and stamina"
+        "Character Skill Cooldown Reduction" // -0%, -5%, -7.5%, -10%
     ],
     "25000": [  // SOLID
         "Improved Madness Resistance",  // +75 resistance
         "Stamina Recovery upon Landing Attacks", // +2, +3 points per attack
-        "Partial HP Restoration upon Post-Damage Attacks"
+        "[Ironeye] Extends duration of weak point",  // +4.5s
+        "FP Restoration upon Bow Attacks",  // +2FP per hit
+        "Increased Maximum HP",  // Vigor +5
     ],
     "5000": [  // SITUATIONAL
         "Attack power increased for each evergaol prisoner defeated",  // +5% per evergaol boss
@@ -36,6 +39,6 @@
     ],
     "100": [  // NICE
         "Small Pouch in possession at start of expedition",
-        "Ultimate Art Gauge"  // +5%, +7.5%, +10% idle gain
+        "Ultimate Art Gauge",  // +5%, +7.5%, +10% idle gain
     ]
 }

@@ -1,23 +1,51 @@
 {
-    "Starting armament inflicts frost": 200,
-    "Attack power increased for each evergaol prisoner defeated": 200,
+    "-1000000000": [  // BAD
+        //"More Damage Taken After Evasion",
+    ],
+    "1000000000": [  // MUST
+        "Continuous HP Recovery", // +2 each second
+        "HP Recovery From Successful Guarding",
+        "Starting armament inflicts frost",
+    ],
+    "100000000": [  // TIER 1
+        "Art gauge charged from successful guarding",
+        "[Executor] Roaring restores HP while Art is active",
+        "Physical Attack Up",  // +3%, +4%, +5%, +8.5%, +10%
+        "Improved Initial Standard Attack",  // +13%
+        "Improved Halberd Attack Power",
+        "HP Restoration upon Katana Attacks"
 
-    "Changes compatible armament's skill to Seppuku at start of expedition": 100,
-    "Changes compatible armament's skill to Blood Blade at start of expedition": 100,
-
-    "Slowly restore HP for self and nearby allies when HP is low": 100,
-    "HP Recovery From Successful Guarding": 100,
-
-    "[Executor] Roaring restores HP while Art is active": 75,
-    "Partial HP Restoration upon Post-Damage Attacks": 75,
-
-
-    "Improved Damage Negation at Low HP": 20,
-    "Art gauge charged from successful guarding": 20,
-
-    "Stamina Recovery upon Landing Attacks": 10,
-    "Taking attacks improves attack power": 10,
-    "Stonesword Key in possession at start of expedition": 5,
-    "Small Pouch in possession at start of expedition": 1,
-    "Continuous HP Recovery": 1
+    ],
+    "10000000": [  // TIER 2
+        "[Executor] Improved Dexterity and Arcane, Reduced Vigor",
+        "[Executor] Attack power up while Ultimate Art is active",
+        "Changes compatible armament's skill to Blood Blade at start of expedition",
+        "Changes compatible armament's skill to Seppuku at start of expedition",
+        "FP Restoration upon Katana Attacks",
+        "Guard counter is given a boost based on current HP",
+        "Slowly restore HP for self and nearby allies when HP is low",  // +0.5% +1 HP per second for 50s when HP below 20%
+        "Improved Physical Damage Negation",  // +10%, +10.5%, +12%
+        "Improved Damage Negation at Low HP"  // +25% when HP below 20%
+    ],
+    "1000000": [  // TIER 3
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Character Skill Cooldown Reduction" // -0%, -5%, -7.5%, -10%
+    ],
+    "25000": [  // SOLID
+        "Improved Madness Resistance",  // +75 resistance
+        "Stamina Recovery upon Landing Attacks", // +2, +3 points per attack
+        "Partial HP Restoration upon Post-Damage Attacks"
+    ],
+    "5000": [  // SITUATIONAL
+        "Attack power increased for each evergaol prisoner defeated",  // +5% per evergaol boss
+        "Max HP increased for each great enemy defeated at a Great Church.",  // +5% per boss
+        "Max stamina increased for each great enemy defeated at a Great Encampment",  // +7.5% per boss
+        "Arcane increased for each great enemy defeated at a Ruin",  // +4 Arcane per boss 
+        "Attack power increased for each Night Invader defeated",  // +7%
+        "Runes and Item Discovery increased for each great enemy defeated at a Fort"  // +16 discovery, +5.5% rune gain per boss
+    ],
+    "100": [  // NICE
+        "Small Pouch in possession at start of expedition",
+        "Ultimate Art Gauge"  // +5%, +7.5%, +10% idle gain
+    ]
 }
