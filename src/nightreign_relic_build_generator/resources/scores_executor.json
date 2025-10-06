@@ -11,8 +11,9 @@
         "Art gauge charged from successful guarding",
         "[Executor] Roaring restores HP while Art is active",
         "Physical Attack Up",  // +3%, +4%, +5%, +8.5%, +10%
+        "Attack power up when facing frostbite-afflicted enemy", // +10%
         "Improved Initial Standard Attack",  // +13%
-        "Improved Halberd Attack Power",
+        "Improved Katana Attack Power",
         "HP Restoration upon Katana Attacks"
 
     ],

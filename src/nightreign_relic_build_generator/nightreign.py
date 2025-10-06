@@ -11,11 +11,12 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import ByteString, ClassVar, Iterator, Mapping, Sequence, cast
 
+import json5
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
 from .term_style import TermStyle
-from .utility import get_resource_json
+from .utility import get_resource_text
 
 logger = logging.getLogger(__name__)
 
@@ -536,11 +537,11 @@ class Database:
         )
 
     def __post_init__(self) -> None:
-        effect_data: dict[str, dict[str, str | int | bool]] = (
-            get_resource_json("effects.json")
+        effect_data: dict[str, dict[str, str | int | bool]] = json5.loads(
+            get_resource_text("effects.json")
         )
-        item_data: dict[str, dict[str, str | int]] = get_resource_json(
-            "items.json"
+        item_data: dict[str, dict[str, str | int]] = json5.loads(
+            get_resource_text("items.json")
         )
 
         for item_id, attributes in item_data.items():

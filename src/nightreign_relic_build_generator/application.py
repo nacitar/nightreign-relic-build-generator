@@ -11,14 +11,10 @@ from typing import Sequence
 import json5
 from tqdm import tqdm
 
-from .finder import get_top_builds
+from .build_finder import BuildFinder
 from .nightreign import CLASS_VESSELS, Database, Relic, load_save_file
 from .term_style import TermStyle
-from .utility import (
-    get_builtin_scores,
-    list_builtin_score_resources,
-    load_scores,
-)
+from .utility import get_resource_text, list_builtin_score_resources
 
 logger = logging.getLogger(__name__)
 
@@ -307,12 +303,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.no_color:
                     TermStyle.set_enabled(False)
                 if args.scores:
-                    score_table = load_scores(Path(args.scores))
+                    score_json = Path(args.scores).read_text(encoding="utf-8")
                 elif args.builtin_scores:
-                    score_table = get_builtin_scores(args.builtin_scores)
+                    score_json = get_resource_text(
+                        f"scores_{args.builtin_scores}.json"
+                    )
+                else:
+                    raise AssertionError("no score_json set")
 
                 vessel_tree = CLASS_VESSELS[args.character_class]
 
+                finder = BuildFinder(
+                    relics=relics, score_json=score_json, prune=args.prune
+                )
                 print(
                     "Generating permutations; this can take anywhere from"
                     " several minutes to an hour, depending upon your scores."
@@ -321,13 +324,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     desc="Scoring possible builds", unit=" builds"
                 )
                 top_builds = reversed(
-                    get_top_builds(
-                        relics,
+                    finder.top_builds(
                         vessel_tree,
                         progress_bar=progress_bar,
-                        score_table=score_table,
                         count=args.limit,
-                        prune=args.prune,
                         minimum=args.minimum,
                     )
                 )
