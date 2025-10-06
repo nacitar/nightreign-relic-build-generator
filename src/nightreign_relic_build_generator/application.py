@@ -12,7 +12,7 @@ import json5
 from tqdm import tqdm
 
 from .finder import get_top_builds
-from .nightreign import CLASS_URNS, Database, Relic, load_save_file
+from .nightreign import CLASS_VESSELS, Database, Relic, load_save_file
 from .term_style import TermStyle
 from .utility import (
     get_builtin_scores,
@@ -174,8 +174,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "-c",
         "--character-class",
         metavar="NAME",
-        help='The name of the class whose urns will be used, or "universal".',
-        choices=tuple(CLASS_URNS.keys()) + ("universal",),
+        help=(
+            "The name of the class whose vessels will"
+            ' be used, or "universal".'
+        ),
+        choices=tuple(CLASS_VESSELS.keys()) + ("universal",),
         required=True,
     )
     compute_parser.add_argument(
@@ -308,7 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 elif args.builtin_scores:
                     score_table = get_builtin_scores(args.builtin_scores)
 
-                urn_tree = CLASS_URNS[args.character_class]
+                vessel_tree = CLASS_VESSELS[args.character_class]
 
                 print(
                     "Generating permutations; this can take anywhere from"
@@ -320,7 +323,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 top_builds = reversed(
                     get_top_builds(
                         relics,
-                        urn_tree,
+                        vessel_tree,
                         progress_bar=progress_bar,
                         score_table=score_table,
                         count=args.limit,

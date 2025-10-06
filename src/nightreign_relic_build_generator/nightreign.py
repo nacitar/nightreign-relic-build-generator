@@ -577,7 +577,7 @@ class Database:
 
 
 @dataclass(eq=False)  # no eq so object provides hashability
-class UrnTree:
+class VesselTree:
     """
     Trie-like tree of color requirements. Each edge key is a Color or None
     (wildcard).  A node with no children is a leaf and represents a complete
@@ -585,7 +585,9 @@ class UrnTree:
     """
 
     name: str = field(init=False, default="")
-    next: dict[Color | None, UrnTree] = field(init=False, default_factory=dict)
+    next: dict[Color | None, VesselTree] = field(
+        init=False, default_factory=dict
+    )
 
     name_to_colors: InitVar[dict[str, Sequence[Color | None]] | None] = None
 
@@ -601,7 +603,7 @@ class UrnTree:
             try:
                 next_tree = current.next[color]
             except KeyError:
-                next_tree = UrnTree()
+                next_tree = VesselTree()
                 current.next[color] = next_tree
             current = next_tree
         current.name = name
@@ -624,7 +626,7 @@ class UrnTree:
         chosen_positions: list[int | None] = []
 
         def depth_first_search(
-            current_node: UrnTree,
+            current_node: VesselTree,
         ) -> Iterator[tuple[str, tuple[Relic | None, ...]]]:
             # Leaf → emit the concrete selection for this path.
             if current_node.name:
@@ -667,7 +669,7 @@ class UrnTree:
         yield from depth_first_search(self)
 
 
-UNIVERSAL_URNS: dict[str, Sequence[Color | None]] = {
+UNIVERSAL_VESSELS: dict[str, Sequence[Color | None]] = {
     "Sacred Erdtree Grail": (
         Color.YELLOW,
         Color.YELLOW,
@@ -693,9 +695,9 @@ UNIVERSAL_URNS: dict[str, Sequence[Color | None]] = {
         Color.DEEP_BLUE,
     ),
 }
-CLASS_URNS: dict[str, UrnTree] = {
-    "universal": UrnTree(UNIVERSAL_URNS),
-    "duchess": UrnTree(
+CLASS_VESSELS: dict[str, VesselTree] = {
+    "universal": VesselTree(UNIVERSAL_VESSELS),
+    "duchess": VesselTree(
         {
             "Duchess' Urn": (
                 Color.RED,
@@ -738,9 +740,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_YELLOW,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "executor": UrnTree(
+    "executor": VesselTree(
         {
             "Executor's Urn": (
                 Color.RED,
@@ -783,9 +785,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_BLUE,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "guardian": UrnTree(
+    "guardian": VesselTree(
         {
             "Guardian's Urn": (
                 Color.RED,
@@ -828,9 +830,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_BLUE,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "ironeye": UrnTree(
+    "ironeye": VesselTree(
         {
             "Ironeye's Urn": (
                 Color.YELLOW,
@@ -873,9 +875,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_RED,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "raider": UrnTree(
+    "raider": VesselTree(
         {
             "Raider's Urn": (
                 Color.RED,
@@ -918,9 +920,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_BLUE,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "recluse": UrnTree(
+    "recluse": VesselTree(
         {
             "Recluse's Urn": (
                 Color.BLUE,
@@ -963,9 +965,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_RED,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "revenant": UrnTree(
+    "revenant": VesselTree(
         {
             "Revenant's Urn": (
                 Color.BLUE,
@@ -1008,9 +1010,9 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_RED,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
-    "wylder": UrnTree(
+    "wylder": VesselTree(
         {
             "Wylder's Urn": (
                 Color.RED,
@@ -1053,6 +1055,6 @@ CLASS_URNS: dict[str, UrnTree] = {
                 Color.DEEP_YELLOW,
             ),
         }
-        | UNIVERSAL_URNS
+        | UNIVERSAL_VESSELS
     ),
 }

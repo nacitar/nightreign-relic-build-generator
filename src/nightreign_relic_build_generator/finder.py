@@ -8,7 +8,7 @@ from typing import Literal, NamedTuple, Never, Sequence, Union
 
 from tqdm.std import tqdm as Tqdm
 
-from .nightreign import Color, Effect, Relic, UrnTree
+from .nightreign import Color, Effect, Relic, VesselTree
 
 logger = logging.getLogger(__name__)
 
@@ -67,12 +67,12 @@ class ScoredEffects:
 
 @dataclass(frozen=True)
 class Build(ScoredEffects):
-    urn_name: str
+    vessel_name: str
     relics: tuple[Relic | None, ...]
 
     def __str__(self) -> str:
         lines: list[str] = []
-        lines.append(f"SCORE: {self.score} - {self.urn_name}")
+        lines.append(f"SCORE: {self.score} - {self.vessel_name}")
         for relic in self.relics:
             if relic is not None:
                 lines.append(str(relic))
@@ -246,7 +246,7 @@ class IncrementalScorer:
 
 def get_top_builds(
     relics: Sequence[Relic],
-    urn_tree: UrnTree,
+    vessel_tree: VesselTree,
     *,
     progress_bar: Tqdm[Never] | None = None,
     score_table: dict[str, int],
@@ -255,8 +255,8 @@ def get_top_builds(
     minimum: int,
 ) -> list[Build]:
     """
-    Branch-and-bound search that integrates scoring while walking the UrnTree.
-    This aggressively prunes and returns top K builds much faster.
+    Branch-and-bound search that integrates scoring while walking the
+    VesselTree.  This aggressively prunes and returns top K builds much faster.
     """
     # 0) Filter useless relics (same as your get_builds)
     filtered_relics: list[Relic] = []
@@ -333,7 +333,7 @@ def get_top_builds(
     # We also want a quick multi-slot bound for a *path of slots*.
     # For simplicity, we compute “best k among all non-deep unused”
     # (wildcard path), and for fixed-color paths we do it per-step.
-    def path_bound(node: UrnTree, depth_from_here: int) -> int:
+    def path_bound(node: VesselTree, depth_from_here: int) -> int:
         """
         Very cheap bound: treat each step independently, sum upper-bounds.
         This is intentionally optimistic and fast.
@@ -352,7 +352,7 @@ def get_top_builds(
         # branch, but bound can stay optimistic by assuming the best branch
         # each time.
         while nodes_to_consider and levels < depth_from_here:
-            next_nodes: list[UrnTree] = []
+            next_nodes: list[VesselTree] = []
             # among all edges at this "level", pick the best possible
             # single-step bound
             step_best = 0
@@ -381,19 +381,19 @@ def get_top_builds(
             levels += 1
         return total
 
-    def remaining_depth(node: UrnTree) -> int:
+    def remaining_depth(node: VesselTree) -> int:
         """
         Longest path to a leaf from this node
-        (small int; your urns are length 6).
+        (small int; your vessels are length 6).
         """
         if not node.next:
             return 0
         return 1 + max(remaining_depth(child) for child in node.next.values())
 
     # cache remaining depths per node so we do not recompute
-    _remaining_depth_cache: dict[UrnTree, int] = {}
+    _remaining_depth_cache: dict[VesselTree, int] = {}
 
-    def depth_cached(node: UrnTree) -> int:
+    def depth_cached(node: VesselTree) -> int:
         d = _remaining_depth_cache.get(node)
         if d is not None:
             return d
@@ -401,12 +401,12 @@ def get_top_builds(
         _remaining_depth_cache[node] = d
         return d
 
-    def depth_first_search(node: UrnTree) -> None:
+    def depth_first_search(node: VesselTree) -> None:
         # If this node names a completed urn, consider the current
         # partial build too.
         if node.name:
             current_build = Build(
-                urn_name=node.name,
+                vessel_name=node.name,
                 active_effects=scorer.active_effects,
                 score=scorer.current_score,
                 relics=tuple(
@@ -481,5 +481,5 @@ def get_top_builds(
                 depth_first_search(child)
                 chosen_indices.pop()
 
-    depth_first_search(urn_tree)
+    depth_first_search(vessel_tree)
     return top.results_desc()

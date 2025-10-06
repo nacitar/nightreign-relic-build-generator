@@ -1,4 +1,4 @@
-# NightReign Relic Build Generator
+# Nightreign Relic Build Generator
 This utility is used to find combinations of your relics which can be equipped
 together in order to make a desirable build.
 
@@ -6,8 +6,8 @@ together in order to make a desirable build.
 Your relics are determined by parsing your save file.  What constitutes a
 "good" build, though, is decided by the user via a simple json file that
 associates a score value with effects that are desirable.  Each combination
-of relics is checked against types of urns that are available to your selected
-nightfarer and only valid combinations are provided.  Among the valid
+of relics is checked against types of vessels that are available to your
+selected nightfarer and only valid combinations are provided.  Among the valid
 combinations only the top N scoring builds are provided.
 
 # The Score Format
@@ -114,7 +114,7 @@ ONE of these score file arguments:
 - -b/--builtin-scores, the name of one of the builtin score files
 
 Non-exclusive arguments:
-- -c/--character-class, the name of the class whose urns are used
+- -c/--character-class, the name of the class whose vessels are used
 - -l/--limit, the number of top-scoring builds to keep (default 50)
 - -n/--no-deep, pass this flag to score builds leaving deep relic slots empty
 - --no-color, disabled colorized output (NOTE: colors are Linux only)
@@ -123,7 +123,7 @@ Power-user options you probably don't want to change:
 - -m/--minimum, the minimum score requires to keep a build (default 1)
 - -p/--prune, the minimum score a relic must have to be considered (default 1)
 
-An example invocation using the urns for raider and using the builtin score
+An example invocation using the vessels for raider and using the builtin score
 table I've created as an example for raider:
 ```bash
 app compute YourSave.sl2 -c raider -b raider
