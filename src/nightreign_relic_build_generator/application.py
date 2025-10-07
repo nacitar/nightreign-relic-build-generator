@@ -14,7 +14,7 @@ from tqdm import tqdm
 from .build_finder import BuildFinder
 from .nightreign import CLASS_VESSELS, Database, Relic, load_save_file
 from .term_style import TermStyle
-from .utility import get_resource_text, list_builtin_score_resources
+from .utility import get_builtin_score_text, list_builtin_score_resources
 
 logger = logging.getLogger(__name__)
 
@@ -217,7 +217,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "-t",
         "--tree",
         action="store_true",
-        help="Display results grouped by chalice with relic options.",
+        help="Displays results grouped by vessel with relic options.",
     )
     args = parser.parse_args(args=argv)
 
@@ -311,9 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if args.scores:
                     score_json = Path(args.scores).read_text(encoding="utf-8")
                 elif args.builtin_scores:
-                    score_json = get_resource_text(
-                        f"scores_{args.builtin_scores}.json"
-                    )
+                    score_json = get_builtin_score_text(args.builtin_scores)
                 else:
                     raise AssertionError("no score_json set")
 
@@ -337,19 +335,30 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 progress_bar.close()
 
+                print("")
+                print(f"==== TOP {args.limit} RESULTS, BEST LISTED LAST ====")
+                for build in reversed(top_builds):
+                    print("")
+                    print(finder.build_to_str(build))
+                print("")
                 if args.tree:
                     print("")
+                    print("==== VESSEL TREES ====")
+                    print("")
                     print(finder.builds_to_tree_str(top_builds))
+                    print("")
+                    print(f"TOP {args.limit} scores above, in vessel trees.")
+                    print(
+                        "NOTE: raw results are above the trees,"
+                        " best listed last."
+                    )
                 else:
-                    for build in reversed(top_builds):
-                        print("")
-                        print(finder.build_to_str(build))
+                    print(f"TOP {args.limit} scores above, best listed last.")
 
-                print("")
-                print(f"TOP {args.limit} scores, listed in reverse order.")
                 elapsed = tqdm.format_interval(
                     progress_bar.format_dict["elapsed"]
                 )
+                print("")
                 print(f"Elapsed: {elapsed}")
 
             else:

@@ -1537,6 +1537,18 @@
         "size": 3,
         "color": "Yellow"
     },
+    "20180": {
+        "size": 1,
+        "color": "Yellow"
+    },
+    "20181": {
+        "size": 2,
+        "color": "Yellow"
+    },
+    "20182": {
+        "size": 3,
+        "color": "Yellow"
+    },
     "20260": {
         "size": 1,
         "color": "Green"
@@ -1932,6 +1944,18 @@
     "23082": {
         "size": 3,
         "color": "Blue"
+    },
+    "23170": {
+        "size": 1,
+        "color": "Yellow"
+    },
+    "23171": {
+        "size": 2,
+        "color": "Yellow"
+    },
+    "23172": {
+        "size": 3,
+        "color": "Yellow"
     },
     "23260": {
         "size": 1,
