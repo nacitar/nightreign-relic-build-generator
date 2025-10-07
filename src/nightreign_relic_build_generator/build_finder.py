@@ -11,6 +11,7 @@ import json5
 from tqdm.std import tqdm as Tqdm
 
 from .nightreign import Color, Effect, Relic, VesselTree
+from .term_style import TermStyle
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +25,7 @@ class ScoredEffects:
 @dataclass(frozen=True)
 class Build(ScoredEffects):
     vessel_name: str
-    relics: tuple[Relic | None, ...]
-
-    def __str__(self) -> str:
-        lines: list[str] = []
-        lines.append(f"SCORE: {self.score} - {self.vessel_name}")
-        for relic in self.relics:
-            if relic is not None:
-                lines.append(str(relic))
-            else:
-                lines.append("<Empty Relic Slot>")
-        return os.linesep.join(lines)
+    relic_indexes: tuple[int | None, ...]
 
 
 @dataclass
@@ -48,7 +39,7 @@ class BuildHeap:
         score: int
         build: Build = field(compare=False)
 
-    _Signature = tuple[int, frozenset[Relic | None], frozenset[Effect]]
+    _Signature = tuple[int, frozenset[int | None], frozenset[Effect]]
 
     _heap: list[_Entry] = field(default_factory=list, init=False, repr=False)
     _signatures: set[_Signature] = field(
@@ -58,7 +49,7 @@ class BuildHeap:
     def _signature(self, build: Build) -> _Signature:
         return (
             build.score,
-            frozenset(build.relics),
+            frozenset(build.relic_indexes),
             frozenset(build.active_effects),
         )
 
@@ -283,6 +274,80 @@ class BuildFinder:
             ),
         )
 
+    def build_to_str(self, build: Build) -> str:
+        lines: list[str] = []
+        lines.append(
+            f"{TermStyle.BOLD}"
+            f"{build.vessel_name} [{build.score}]"
+            f"{TermStyle.RESET}"
+        )
+        for relic_index in build.relic_indexes:
+            if relic_index is not None:
+                lines.extend(
+                    f"  {line}"
+                    for line in self.scored_relics[
+                        relic_index
+                    ].relic.str_lines()
+                )
+            else:
+                lines.append(
+                    f"{TermStyle.BOLD}"
+                    "  <Empty Relic Slot>"
+                    f"{TermStyle.RESET}"
+                )
+        return os.linesep.join(lines)
+
+    def builds_to_tree_str(self, builds: Sequence[Build]) -> str:
+        if not builds:
+            return ""
+        sorted_builds = sorted(builds, key=lambda build: build.score)
+        by_vessel: dict[str, list[Build]] = {}
+        for build in sorted_builds:
+            by_vessel.setdefault(build.vessel_name, []).append(build)
+        lines: list[str] = []
+        for vessel_name, vessel_builds in by_vessel.items():
+            if lines:
+                lines.append("")
+            min_score = vessel_builds[0].score
+            max_score = vessel_builds[-1].score
+            lines.append(
+                f"{TermStyle.BOLD}"
+                f"{vessel_name} [{min_score}, {max_score}]"
+                f"{TermStyle.RESET}"
+            )
+
+            # Assume all builds in a vessel share the same slot count
+            slot_count = len(vessel_builds[0].relic_indexes)
+            # collect unique relic indexes in the order they appear
+            for slot in range(slot_count):
+                seen: set[int] = set()
+                slot_relic_indexes: list[int] = []
+                slot_color_str: str = ""
+
+                for build in vessel_builds:
+                    i = build.relic_indexes[slot]
+                    if i is None:
+                        continue
+                    if i not in seen:
+                        seen.add(i)
+                        slot_relic_indexes.append(i)
+                        if not slot_color_str:
+                            relic = self.scored_relics[i].relic
+                            slot_color_str = str(relic.color)
+
+                lines.append(
+                    f"  {TermStyle.BOLD}[{slot_color_str}]{TermStyle.RESET}"
+                )
+
+                # list each unique relic that appeared in this slot
+                for i in slot_relic_indexes:
+                    relic = self.scored_relics[i].relic
+                    lines.extend(
+                        f"    {line}"
+                        for line in relic.str_lines(color_prefix=False)
+                    )
+        return os.linesep.join(lines)
+
     # -------------------------------------------------
     # Fast search: branch-and-bound with upper bounding
     # -------------------------------------------------
@@ -441,14 +506,7 @@ class BuildFinder:
                     vessel_name=node.name,
                     active_effects=scorer.active_effects,
                     score=scorer.current_score,
-                    relics=tuple(
-                        (
-                            self.scored_relics[i].relic
-                            if i is not None
-                            else None
-                        )
-                        for i in chosen_indices
-                    ),
+                    relic_indexes=tuple(chosen_indices),
                 )
                 if current_build.score >= minimum:
                     top.consider(current_build)

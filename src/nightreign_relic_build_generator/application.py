@@ -213,6 +213,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     compute_parser.add_argument(
         "--no-color", action="store_true", help="Disable colorized output."
     )
+    compute_parser.add_argument(
+        "-t",
+        "--tree",
+        action="store_true",
+        help="Display results grouped by chalice with relic options.",
+    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -323,19 +329,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 progress_bar = tqdm(
                     desc="Scoring possible builds", unit=" builds"
                 )
-                top_builds = reversed(
-                    finder.top_builds(
-                        vessel_tree,
-                        progress_bar=progress_bar,
-                        count=args.limit,
-                        minimum=args.minimum,
-                    )
+                top_builds = finder.top_builds(
+                    vessel_tree,
+                    progress_bar=progress_bar,
+                    count=args.limit,
+                    minimum=args.minimum,
                 )
                 progress_bar.close()
 
-                for build in top_builds:
+                if args.tree:
                     print("")
-                    print(build)
+                    print(finder.builds_to_tree_str(top_builds))
+                else:
+                    for build in reversed(top_builds):
+                        print("")
+                        print(finder.build_to_str(build))
 
                 print("")
                 print(f"TOP {args.limit} scores, listed in reverse order.")

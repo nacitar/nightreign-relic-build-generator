@@ -406,10 +406,10 @@ class Relic:
             for effect in chain(self.effects, self.curses)
         )
 
-    def __str__(self) -> str:
-        lines: list[str] = [
-            f"{TermStyle.BOLD}[{self.color}] {self.name}{TermStyle.RESET}"
-        ]
+    def str_lines(self, *, color_prefix: bool = True) -> list[str]:
+        lines: list[str] = []
+        prefix = f"[{self.color}] " if color_prefix else ""
+        lines.append(f"{TermStyle.BOLD}{prefix}{self.name}{TermStyle.RESET}")
         for i in range(len(self.effects)):
             effect = self.effects[i]
             curse = self.curses[i]
@@ -421,7 +421,10 @@ class Relic:
                     lines.append(
                         f"{TermStyle.BLUE}  - {curse}{TermStyle.RESET_COLOR}"
                     )
-        return os.linesep.join(lines)
+        return lines
+
+    def __str__(self) -> str:
+        return os.linesep.join(self.str_lines())
 
 
 @dataclass
