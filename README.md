@@ -73,14 +73,14 @@ app -v <subcommand>
 
 The subcommands are documented below.
 
-## Simple Builtins
+## Simple Subcommands
 ### list-builtins
 This subcommand simply lists the names of the builtin score tables included in
 the tool. Invoke it via:
 ```bash
 app list-builtins
 ```
-## Builtins Requiring a Save File
+## Subcommands Requiring a Save File
 There are common arguments for commands that require a save file.  Obviously
 the path to the `.sl2` file itself must be provided.  By default, the tool
 looks at the first save slot in that file (index 0).  However, you can use the
