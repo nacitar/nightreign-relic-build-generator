@@ -8,7 +8,6 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Sequence
 
-import json5
 from tqdm import tqdm
 
 from .build_finder import BuildFinder
@@ -141,11 +140,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Dumps a list of all parsed relics.",
     )
 
-    subparsers.add_parser(
-        "item-database-updater",
-        help="Updates the item database with reasonably inferred values.",
-    )
-
     compute_parser = subparsers.add_parser(
         "compute",
         parents=[common],
@@ -238,24 +232,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.operation == "list-builtins":
         for resource_name in list_builtin_score_resources():
             print(resource_name)
-    elif args.operation == "item-database-updater":
-        database = Database()
-        if added_count := database.add_inferred_item_metadata():
-            new_file = Path("new_items.json")
-            with new_file.open("w", encoding="utf-8") as handle:
-                json5.dump(
-                    database.items_as_dict(),
-                    handle,
-                    indent=4,
-                    quote_keys=True,
-                    trailing_commas=False,
-                )
-            print(f"Added {added_count} entries to new file: {new_file}")
-            print(
-                "You must manually update resources/items.json to apply this."
-            )
-        else:
-            print("No new entries inferred; no file written.")
     elif args.operation in ("dump-relics", "compute"):
         save_title = f"USER_DATA{args.index:03d}"
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")

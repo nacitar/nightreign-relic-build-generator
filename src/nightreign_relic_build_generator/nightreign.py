@@ -166,7 +166,7 @@ class Entity:
         return None
 
 
-@dataclass
+@dataclass(frozen=True)
 class RelicDebugData:
     metadata_offset: int
     metadata_data: ByteString
@@ -297,8 +297,12 @@ class SaveData:
                                 effect_ids=relic_data.effect_ids,
                                 curse_ids=relic_data.curse_ids,
                                 debug_data=RelicDebugData(
-                                    metadata_offset=relic_data.debug_data.metadata_offset,
-                                    metadata_data=relic_data.debug_data.metadata_data,
+                                    metadata_offset=(
+                                        relic_data.debug_data.metadata_offset
+                                    ),
+                                    metadata_data=(
+                                        relic_data.debug_data.metadata_data
+                                    ),
                                     inventory_offset=offset,
                                     inventory_data=entity.data,
                                 ),
@@ -484,25 +488,6 @@ class Database:
     effect_id_to_effect: dict[int, Effect] = field(
         init=False, default_factory=dict
     )
-
-    def add_inferred_item_metadata(self) -> int:
-        added_entries = 0
-        for id in sorted(self.relic_id_to_info.keys()):
-            metadata = self.relic_id_to_info[id]
-            custom_name = self.relic_names.get(id, "")
-            if custom_name:
-                continue
-            group_start = id - metadata.size + 1
-            for entry_id in range(group_start, group_start + 3):
-                entry = self.relic_id_to_info.get(entry_id)
-                if entry is None:
-                    self.relic_id_to_info[entry_id] = type(
-                        self
-                    )._RelicMetadata(
-                        color=metadata.color, size=(entry_id - group_start + 1)
-                    )
-                    added_entries += 1
-        return added_entries
 
     def effects_as_dict(self) -> dict[str, dict[str, str | bool | int]]:
         output: dict[str, dict[str, str | bool | int]] = {}
