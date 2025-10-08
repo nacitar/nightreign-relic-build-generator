@@ -56,7 +56,7 @@ class EntityType(Enum):
 @dataclass
 class EntityHeader:
     _STRUCT: ClassVar[struct.Struct] = struct.Struct("<HBB")
-    item_id: int
+    inventory_id: int
     entity_type: EntityType
     data: memoryview
 
@@ -65,11 +65,13 @@ class EntityHeader:
         try:
             view = memoryview(data)[offset : offset + cls._STRUCT.size]
             header_fields: tuple[int, int, int] = cls._STRUCT.unpack_from(view)
-            item_id, subtype_id, type_id = header_fields
+            inventory_id, subtype_id, type_id = header_fields
             entity_type = EntityType.from_identifiers(type_id, subtype_id)
             if entity_type:
                 return EntityHeader(
-                    item_id=item_id, entity_type=entity_type, data=view
+                    inventory_id=inventory_id,
+                    entity_type=entity_type,
+                    data=view,
                 )
         except struct.error:
             pass
@@ -164,12 +166,31 @@ class Entity:
         return None
 
 
+@dataclass
+class RelicDebugData:
+    metadata_offset: int
+    metadata_data: ByteString
+    inventory_offset: int
+    inventory_data: ByteString
+
+    def __str__(self) -> str:
+        return os.linesep.join(
+            [
+                f"^ metadata offset: {self.metadata_offset}",
+                f"  = {self.metadata_data.hex()}",
+                f"^ inventory offset: {self.inventory_offset}",
+                f"  = {self.inventory_data.hex()}",
+            ]
+        )
+
+
 @dataclass(frozen=True)
 class RelicData:
+    inventory_id: int
     item_id: int
     effect_ids: tuple[int, ...]
     curse_ids: tuple[int, ...]
-    save_offset: int
+    debug_data: RelicDebugData
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -200,10 +221,12 @@ class SaveData:
             view = memoryview(self.data)
             while entity := Entity.from_data(Section.METADATA, view, offset):
                 if entity.header.entity_type is EntityType.RELIC:
-                    relics[entity.header.item_id] = RelicData(
+                    relics[entity.header.inventory_id] = RelicData(
+                        inventory_id=entity.header.inventory_id,
                         item_id=cast(
-                            int, struct.unpack_from("<H", entity.data, 4)[0]
-                        ),
+                            int, struct.unpack_from("<I", entity.data, 4)[0]
+                        )
+                        & 0x7FFFFFFF,  # clear "flag-bit" for "equippable"
                         effect_ids=tuple(
                             effect_id
                             for effect_id in cast(
@@ -218,7 +241,12 @@ class SaveData:
                                 struct.unpack_from("<III", entity.data, 56),
                             )
                         ),
-                        save_offset=offset,
+                        debug_data=RelicDebugData(
+                            metadata_offset=offset,
+                            metadata_data=entity.data,
+                            inventory_offset=0,
+                            inventory_data=b"",
+                        ),
                     )
                 else:
                     logger.debug(
@@ -259,14 +287,27 @@ class SaveData:
             while entity := Entity.from_data(Section.INVENTORY, view, offset):
                 if entity.header.entity_type is EntityType.RELIC:
                     relic_data = metadata_relic_table.get(
-                        entity.header.item_id
+                        entity.header.inventory_id
                     )
                     if relic_data:
-                        relics.append(relic_data)
+                        relics.append(
+                            RelicData(
+                                inventory_id=entity.header.inventory_id,
+                                item_id=relic_data.item_id,
+                                effect_ids=relic_data.effect_ids,
+                                curse_ids=relic_data.curse_ids,
+                                debug_data=RelicDebugData(
+                                    metadata_offset=relic_data.debug_data.metadata_offset,
+                                    metadata_data=relic_data.debug_data.metadata_data,
+                                    inventory_offset=offset,
+                                    inventory_data=entity.data,
+                                ),
+                            )
+                        )
                     else:
                         logger.error(
                             "skipping inventory relic with"
-                            f" no metadata: {entity.header.item_id}"
+                            f" no metadata: {entity.header.inventory_id}"
                         )
                 else:
                     logger.debug(
@@ -377,7 +418,8 @@ class Relic:
     name: str
     effects: tuple[Effect, ...]
     curses: tuple[Effect, ...]
-    save_offset: int | None = None  # only used for debugging
+    id: int
+    debug_data: RelicDebugData  # only used for debugging
 
     def __post_init__(self) -> None:
         if len(self.effects) != len(self.curses):
@@ -514,9 +556,11 @@ class Database:
                 name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
                 curses=tuple(self.get_effect(id) for id in data.curse_ids),
-                save_offset=data.save_offset,
+                id=data.item_id,
+                debug_data=data.debug_data,
             )
         if info.size != filled_effect_count:
+            logger.debug(str(data.debug_data))
             raise AssertionError(
                 f"relic id {data.item_id} is size {info.size} but has"
                 f" {filled_effect_count} effects."
@@ -536,7 +580,8 @@ class Database:
             name=name,
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
             curses=tuple(self.get_effect(id) for id in data.curse_ids),
-            save_offset=data.save_offset,
+            id=data.item_id,
+            debug_data=data.debug_data,
         )
 
     def __post_init__(self) -> None:

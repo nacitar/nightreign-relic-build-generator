@@ -290,16 +290,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             print("COMPLETE RELICS:")
             for relic in relics:
                 print(relic)
-                if relic.save_offset is not None:
-                    logger.debug(f"^ save offset: {relic.save_offset}")
+                logger.debug(str(relic.debug_data))
             if incomplete_relics:
                 print("")
                 print("INCOMPLETE RELICS:")
                 for relic in incomplete_relics:
                     print(relic)
-                    if relic.save_offset is not None:
-                        logger.debug(f"^ save offset: {relic.save_offset}")
-                logger.debug(f"metadata offset: {save_data.metadata_offset}")
+                    logger.debug(str(relic.debug_data))
                 print("")
             print("")
             print(relic_count_str)
