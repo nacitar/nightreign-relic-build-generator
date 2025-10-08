@@ -227,7 +227,7 @@
         "size": 3,
         "color": "Green"
     },
-    "1210": {
+    "1210": {  // NOTE: misnamed/miscolored IN THE GAME'S FILES; not my error.
         "name": "Grand Tranquil Scene",
         "size": 3,
         "color": "Yellow"

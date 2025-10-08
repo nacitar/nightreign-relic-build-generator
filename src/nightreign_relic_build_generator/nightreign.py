@@ -187,7 +187,7 @@ class RelicDebugData:
 @dataclass(frozen=True)
 class RelicData:
     inventory_id: int
-    item_id: int
+    relic_id: int
     effect_ids: tuple[int, ...]
     curse_ids: tuple[int, ...]
     debug_data: RelicDebugData
@@ -223,7 +223,7 @@ class SaveData:
                 if entity.header.entity_type is EntityType.RELIC:
                     relics[entity.header.inventory_id] = RelicData(
                         inventory_id=entity.header.inventory_id,
-                        item_id=cast(
+                        relic_id=cast(
                             int, struct.unpack_from("<I", entity.data, 4)[0]
                         )
                         & 0x7FFFFFFF,  # clear "flag-bit" for "equippable"
@@ -293,7 +293,7 @@ class SaveData:
                         relics.append(
                             RelicData(
                                 inventory_id=entity.header.inventory_id,
-                                item_id=relic_data.item_id,
+                                relic_id=relic_data.relic_id,
                                 effect_ids=relic_data.effect_ids,
                                 curse_ids=relic_data.curse_ids,
                                 debug_data=RelicDebugData(
@@ -543,7 +543,7 @@ class Database:
         return info
 
     def get_relic(self, data: RelicData) -> Relic:
-        info = self.relic_id_to_info.get(data.item_id)
+        info = self.relic_id_to_info.get(data.relic_id)
         effects = tuple(self.get_effect(id) for id in data.effect_ids)
         filled_effect_count = sum(
             1 for effect in effects if not effect.is_empty
@@ -553,25 +553,25 @@ class Database:
             return Relic(
                 color=Color.UNKNOWN,
                 size=len(data.effect_ids),
-                name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.item_id}",
+                name=f"{Relic.UNKNOWN_PREFIX}RELIC:{data.relic_id}",
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
                 curses=tuple(self.get_effect(id) for id in data.curse_ids),
-                id=data.item_id,
+                id=data.relic_id,
                 debug_data=data.debug_data,
             )
         if info.size != filled_effect_count:
             logger.debug(str(data.debug_data))
             raise AssertionError(
-                f"relic id {data.item_id} is size {info.size} but has"
+                f"relic id {data.relic_id} is size {info.size} but has"
                 f" {filled_effect_count} effects."
             )
         if info.size not in range(1, len(type(self).SIZE_NAMES) + 1):
             raise AssertionError(
                 f"database has invalid size {info.size}"
-                f" for relic id {data.item_id}"
+                f" for relic id {data.relic_id}"
             )
 
-        name = self.relic_names.get(data.item_id, "")
+        name = self.relic_names.get(data.relic_id, "")
         if not name:
             name = Relic.standard_name(info.color, info.size)
         return Relic(
@@ -580,40 +580,40 @@ class Database:
             name=name,
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
             curses=tuple(self.get_effect(id) for id in data.curse_ids),
-            id=data.item_id,
+            id=data.relic_id,
             debug_data=data.debug_data,
         )
 
     def __post_init__(self) -> None:
-        effect_data: dict[str, dict[str, str | int | bool]] = json5.loads(
+        effect_id_data: dict[str, dict[str, str | int | bool]] = json5.loads(
             get_resource_text("effects.json")
         )
-        item_data: dict[str, dict[str, str | int]] = json5.loads(
-            get_resource_text("items.json")
+        relic_id_data: dict[str, dict[str, str | int]] = json5.loads(
+            get_resource_text("relic-ids.json")
         )
 
-        for item_id, attributes in item_data.items():
+        for relic_id, attributes in relic_id_data.items():
             color_str = str(attributes["color"])
             try:
                 color = Color(color_str)
             except KeyError:
-                logger.error(f'Skipping {item_id}: bad color "{color_str}"')
+                logger.error(f'Skipping {relic_id}: bad color "{color_str}"')
                 continue
 
             size = int(attributes["size"])
             if not (1 <= size <= 3):
-                logger.error(f'Skipping {item_id}: bad size "{size}"')
+                logger.error(f'Skipping {relic_id}: bad size "{size}"')
                 continue
 
             standard_name = Relic.standard_name(color, size)
             name = str(attributes.get("name", ""))
             if name != standard_name:
-                self.relic_names[int(item_id)] = name
-            self.relic_id_to_info[int(item_id)] = type(self)._RelicMetadata(
+                self.relic_names[int(relic_id)] = name
+            self.relic_id_to_info[int(relic_id)] = type(self)._RelicMetadata(
                 color=color, size=size
             )
 
-        for effect_id, effect_attributes in effect_data.items():
+        for effect_id, effect_attributes in effect_id_data.items():
             effect_info = Effect(
                 name=str(effect_attributes["name"]),
                 level=int(effect_attributes.get("level", 0)),
