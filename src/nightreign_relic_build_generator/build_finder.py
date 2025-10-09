@@ -281,13 +281,11 @@ class BuildFinder:
             f"{build.vessel_name} [{build.score}]"
             f"{TermStyle.RESET}"
         )
-        for relic_index in build.relic_indexes:
-            if relic_index is not None:
+        for i in build.relic_indexes:
+            if i is not None:
                 lines.extend(
                     f"  {line}"
-                    for line in self.scored_relics[
-                        relic_index
-                    ].relic.str_lines()
+                    for line in self.scored_relics[i].relic.str_lines()
                 )
             else:
                 lines.append(
@@ -300,16 +298,20 @@ class BuildFinder:
     def builds_to_tree_str(self, builds: Sequence[Build]) -> str:
         if not builds:
             return ""
-        sorted_builds = sorted(builds, key=lambda build: build.score)
         by_vessel: dict[str, list[Build]] = {}
-        for build in sorted_builds:
+        # best vessels first, so the keys are ordered as such
+        for build in sorted(builds, key=lambda build: build.score, reverse=True):
             by_vessel.setdefault(build.vessel_name, []).append(build)
         lines: list[str] = []
-        for vessel_name, vessel_builds in by_vessel.items():
+        # reversed so vessels are printed lowest-max-score first
+        for vessel_name in reversed(by_vessel.keys()):
+            # show builds worst to best
+            #vessel_builds = list(reversed(by_vessel[vessel_name]))
+            vessel_builds = by_vessel[vessel_name]
             if lines:
                 lines.append("")
-            min_score = vessel_builds[0].score
-            max_score = vessel_builds[-1].score
+            min_score = vessel_builds[-1].score
+            max_score = vessel_builds[0].score
             lines.append(
                 f"{TermStyle.BOLD}"
                 f"{vessel_name} [{min_score}, {max_score}]"
@@ -322,7 +324,7 @@ class BuildFinder:
             for slot in range(slot_count):
                 seen: set[int] = set()
                 slot_relic_indexes: list[int] = []
-                slot_color_str: str = ""
+                color_name: str = ""
 
                 for build in vessel_builds:
                     i = build.relic_indexes[slot]
@@ -331,20 +333,25 @@ class BuildFinder:
                     if i not in seen:
                         seen.add(i)
                         slot_relic_indexes.append(i)
-                        if not slot_color_str:
+                        if not color_name:
                             relic = self.scored_relics[i].relic
-                            slot_color_str = str(relic.color)
-
-                lines.append(
-                    f"  {TermStyle.BOLD}[{slot_color_str}]{TermStyle.RESET}"
-                )
-
-                # list each unique relic that appeared in this slot
-                for i in slot_relic_indexes:
-                    relic = self.scored_relics[i].relic
-                    lines.extend(
-                        f"    {line}"
-                        for line in relic.str_lines(color_prefix=False)
+                            color_name = str(relic.color)
+                if color_name:
+                    lines.append(
+                        f"  {TermStyle.BOLD}[{color_name}]{TermStyle.RESET}"
+                    )
+                    # reversed so indexes from higher-score builds go last
+                    for i in reversed(slot_relic_indexes):
+                        relic = self.scored_relics[i].relic
+                        lines.extend(
+                            f"    {line}"
+                            for line in relic.str_lines(color_prefix=False)
+                        )
+                else:
+                    lines.append(
+                        f"{TermStyle.BOLD}"
+                        "  <Empty Relic Slot>"
+                        f"{TermStyle.RESET}"
                     )
         return os.linesep.join(lines)
 
