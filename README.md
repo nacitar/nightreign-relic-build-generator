@@ -119,6 +119,8 @@ Non-exclusive arguments:
 - -n/--no-deep, pass this flag to score builds leaving deep relic slots empty
 - --no-color, disabled colorized output (NOTE: colors are Linux only)
 - -t/--tree, displays results grouped by vessel with relic options
+- -v/--vessel, enables whitelist mode and whitelists a specific vessel.
+  Can be passed multiple times.
 
 Power-user options you probably don't want to change:
 - -m/--minimum, the minimum score requires to keep a build (default 1)

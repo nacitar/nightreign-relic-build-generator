@@ -300,13 +300,15 @@ class BuildFinder:
             return ""
         by_vessel: dict[str, list[Build]] = {}
         # best vessels first, so the keys are ordered as such
-        for build in sorted(builds, key=lambda build: build.score, reverse=True):
+        for build in sorted(
+            builds, key=lambda build: build.score, reverse=True
+        ):
             by_vessel.setdefault(build.vessel_name, []).append(build)
         lines: list[str] = []
         # reversed so vessels are printed lowest-max-score first
         for vessel_name in reversed(by_vessel.keys()):
             # show builds worst to best
-            #vessel_builds = list(reversed(by_vessel[vessel_name]))
+            # vessel_builds = list(reversed(by_vessel[vessel_name]))
             vessel_builds = by_vessel[vessel_name]
             if lines:
                 lines.append("")

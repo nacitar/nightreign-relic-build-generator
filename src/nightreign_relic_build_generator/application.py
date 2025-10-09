@@ -11,7 +11,13 @@ from typing import Sequence
 from tqdm import tqdm
 
 from .build_finder import BuildFinder
-from .nightreign import CLASS_VESSELS, Database, Relic, load_save_file
+from .nightreign import (
+    CLASS_VESSELS,
+    Database,
+    Relic,
+    VesselTree,
+    load_save_file,
+)
 from .term_style import TermStyle
 from .utility import get_builtin_score_text, list_builtin_score_resources
 
@@ -213,6 +219,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Displays results grouped by vessel with relic options.",
     )
+    compute_parser.add_argument(
+        "-v",
+        "--vessel",
+        action="append",
+        help="Add this to the list of vessels to whitelist.",
+    )
     args = parser.parse_args(args=argv)
 
     configure_logging(
@@ -288,7 +300,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                 else:
                     raise AssertionError("no score_json set")
 
-                vessel_tree = CLASS_VESSELS[args.character_class]
+                selected_vessels = {
+                    name: colors
+                    for name, colors in CLASS_VESSELS[
+                        args.character_class
+                    ].items()
+                    if not args.vessel or name in args.vessel
+                }
+                if not selected_vessels:
+                    raise ValueError("No selected vessels found.")
+                vessel_tree = VesselTree(selected_vessels)
 
                 finder = BuildFinder(
                     relics=relics, score_json=score_json, prune=args.prune
