@@ -7,6 +7,8 @@
         "[Wylder] Art activation spreads fire in area",
         "Continuous HP Recovery", // +2 each second
         "Physical Attack Up +4", // +10%
+        "HP Restoration upon Fist Attacks",  // +15hp with continuous attacks
+        "Dormant Power Helps Discover Fists",
     ],
     "850000000": [
         "Physical Attack Up +3", // +8.5%
@@ -20,6 +22,7 @@
         "Improved Affinity Attack Power +1", // 8%
     ],
     "300000000": [
+        "Improved Fist Attack Power",  // +6.5%
         "Physical Attack Up +0", // +3%
         "Improved Affinity Attack Power +0", // 5%
     ],

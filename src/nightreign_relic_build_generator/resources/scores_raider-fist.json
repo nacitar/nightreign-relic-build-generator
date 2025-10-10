@@ -3,25 +3,26 @@
         //"More Damage Taken After Evasion",
     ],
     "1000000000": [  // MUST
-        "[Wylder] +1 additional Character Skill use",
-        "[Wylder] Art activation spreads fire in area",
         "Continuous HP Recovery", // +2 each second
         "Physical Attack Up +4", // +10%
+        "HP Restoration upon Fist Attacks",  // +15hp with continuous attacks
+        "Dormant Power Helps Discover Fists"
     ],
     "850000000": [
-        "Physical Attack Up +3", // +8.5%
+        "Physical Attack Up +3" // +8.5%
     ],
     "500000000": [
         "Physical Attack Up +2", // +5%
-        "Improved Affinity Attack Power +2", // 10%
+        "Improved Affinity Attack Power +2" // 10%
     ],
     "400000000": [
         "Physical Attack Up +1", // +4%
-        "Improved Affinity Attack Power +1", // 8%
+        "Improved Affinity Attack Power +1" // 8%
     ],
     "300000000": [
+        "Improved Fist Attack Power",  // +6.5%
         "Physical Attack Up +0", // +3%
-        "Improved Affinity Attack Power +0", // 5%
+        "Improved Affinity Attack Power +0" // 5%
     ],
     "100000000": [  // TIER 1
     ],
@@ -37,7 +38,6 @@
     "25000": [  // SOLID
         "Improved Madness Resistance",  // +75 resistance
         "Stamina Recovery upon Landing Attacks", // +2, +3 points per attack
-        "[Wylder] Standard attacks enhanced with fiery follow-ups when using Character Skill (greatsword only)",  // cancels frostbite, not super great
         "Improved Initial Standard Attack",  // +13%
         "Partial HP Restoration upon Post-Damage Attacks"
     ],

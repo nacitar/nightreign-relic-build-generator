@@ -3,11 +3,25 @@
         //"More Damage Taken After Evasion",
     ],
     "1000000000": [  // MUST
-        "Continuous HP Recovery" // +2 each second
+        "Continuous HP Recovery", // +2 each second
+        "Physical Attack Up +4" // +10%
+    ],
+    "850000000": [
+        "Physical Attack Up +3" // +8.5%
+    ],
+    "500000000": [
+        "Physical Attack Up +2", // +5%
+        "Improved Affinity Attack Power +2" // 10%
+    ],
+    "400000000": [
+        "Physical Attack Up +1", // +4%
+        "Improved Affinity Attack Power +1" // 8%
+    ],
+    "300000000": [
+        "Physical Attack Up +0", // +3%
+        "Improved Affinity Attack Power +0" // 5%
     ],
     "100000000": [  // TIER 1
-        "Physical Attack Up",  // +3%, +4%, +5%, +8.5%, +10%
-        "Improved Initial Standard Attack",  // +13%
     ],
     "10000000": [  // TIER 2
         "Slowly restore HP for self and nearby allies when HP is low",  // +0.5% +1 HP per second for 50s when HP below 20%
@@ -21,6 +35,7 @@
     "25000": [  // SOLID
         "Improved Madness Resistance",  // +75 resistance
         "Stamina Recovery upon Landing Attacks", // +2, +3 points per attack
+        "Improved Initial Standard Attack",  // +13%
         "Partial HP Restoration upon Post-Damage Attacks"
     ],
     "5000": [  // SITUATIONAL
