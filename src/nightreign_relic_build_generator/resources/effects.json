@@ -57,7 +57,7 @@
     },
     "311000": {
         "name": "Improved Item Discovery",
-        "stackable": false
+        "stackable": true
     },
     "311100": {
         "name": "More Runes From Defeated Enemies",
@@ -109,7 +109,7 @@
     },
     "312100": {
         "name": "Improved Poise",
-        "stackable": false
+        "stackable": true
     },
     "312300": {
         "name": "Improved Skill Attack Power",
@@ -117,7 +117,7 @@
     },
     "312500": {
         "name": "Improved Dexterity",
-        "stackable": false
+        "stackable": true
     },
     "312501": {
         "name": "Successive Attacks Boost Attack Power",
@@ -129,7 +129,7 @@
     },
     "320001": {
         "name": "Impaired Physical Damage Negation",
-        "stackable": false
+        "stackable": true
     },
     "320100": {
         "name": "Improved Lightning Attack Power",
@@ -137,7 +137,7 @@
     },
     "320101": {
         "name": "Impaired Physical Damage Negation",
-        "stackable": false
+        "stackable": true
     },
     "320200": {
         "name": "Improved Fire Attack Power",
@@ -145,7 +145,7 @@
     },
     "320201": {
         "name": "Impaired Physical Damage Negation",
-        "stackable": false
+        "stackable": true
     },
     "320300": {
         "name": "Improved Holy Attack Power",
@@ -153,7 +153,7 @@
     },
     "320301": {
         "name": "Impaired Physical Damage Negation",
-        "stackable": false
+        "stackable": true
     },
     "320400": {
         "name": "Improved Attack Power at Low HP",
@@ -177,23 +177,23 @@
     },
     "320900": {
         "name": "Improved Critical Hits",
-        "stackable": false
+        "stackable": true
     },
     "321000": {
         "name": "Projectile Damage Drop-Off Reduced",
-        "stackable": false
+        "stackable": true
     },
     "321200": {
         "name": "Improved Chain Attack Finishers",
-        "stackable": false
+        "stackable": true
     },
     "321300": {
         "name": "Improved Charge Attacks",
-        "stackable": false
+        "stackable": true
     },
     "321500": {
         "name": "Improved Ranged Weapon Attacks",
-        "stackable": false
+        "stackable": true
     },
     "321600": {
         "name": "Blood Loss in Vicinity Increases Attack Power",
@@ -205,7 +205,7 @@
     },
     "321800": {
         "name": "Improved Jump Attacks",
-        "stackable": false
+        "stackable": true
     },
     "321900": {
         "name": "Improved Roar & Breath Attacks",
@@ -346,52 +346,52 @@
     "6001400": {
         "name": "Physical Attack Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "6001401": {
         "name": "Physical Attack Up",
         "level": 4,
-        "stackable": false
+        "stackable": true
     },
     "6001500": {
         "name": "Magic Attack Power Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "6001501": {
         "name": "Magic Attack Power Up",
         "level": 4,
-        "stackable": false
+        "stackable": true
     },
     "6001600": {
         "name": "Fire Attack Power Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "6001601": {
         "name": "Fire Attack Power Up",
         "level": 4,
-        "stackable": false
+        "stackable": true
     },
     "6001700": {
         "name": "Lightning Attack Power Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "6001701": {
         "name": "Lightning Attack Power Up",
         "level": 4,
-        "stackable": false
+        "stackable": true
     },
     "6001800": {
         "name": "Holy Attack Power Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "6001801": {
         "name": "Holy Attack Power Up",
         "level": 4,
-        "stackable": false
+        "stackable": true
     },
     "6002600": {
         "name": "Improved Magic Damage Negation",
@@ -735,17 +735,17 @@
     },
     "6611200": {
         "name": "Improved Sorceries",
-        "stackable": false
+        "stackable": true
     },
     "6611201": {
         "name": "Improved Sorceries",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "6611202": {
         "name": "Improved Sorceries",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "6611300": {
         "name": "Improved Incantations",
@@ -763,7 +763,7 @@
     },
     "6611400": {
         "name": "Improved Flask HP Restoration",
-        "stackable": false
+        "stackable": true
     },
     "6621000": {
         "name": "Crimsonspill Crystal Tear in possession at start of expedition",
@@ -1108,99 +1108,99 @@
     },
     "6820000": {
         "name": "Taking Damage Causes Poison Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820100": {
         "name": "Taking Damage Causes Rot Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820200": {
         "name": "Taking Damage Causes Frost Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820300": {
         "name": "Taking Damage Causes Blood Loss Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820400": {
         "name": "Taking Damage Causes Madness Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820500": {
         "name": "Taking Damage Causes Sleep Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6820600": {
         "name": "Taking Damage Causes Death Buildup",
-        "stackable": false
+        "stackable": true
     },
     "6830000": {
         "name": "Reduced Strength and Intelligence",
-        "stackable": false
+        "stackable": true
     },
     "6830100": {
         "name": "Reduced Dexterity and Faith",
-        "stackable": false
+        "stackable": true
     },
     "6830200": {
         "name": "Reduced Intelligence and Dexterity",
-        "stackable": false
+        "stackable": true
     },
     "6830300": {
         "name": "Reduced Faith and Strength",
-        "stackable": false
+        "stackable": true
     },
     "6830400": {
         "name": "Reduced Vigor and Arcane",
-        "stackable": false
+        "stackable": true
     },
     "6840000": {
         "name": "Reduced Rune Acquisition",
-        "stackable": false
+        "stackable": true
     },
     "6840100": {
         "name": "Reduced Flask HP Restoration",
-        "stackable": false
+        "stackable": true
     },
     "6840200": {
         "name": "Ultimate Art Charging Impaired",
-        "stackable": false
+        "stackable": true
     },
     "6850200": {
         "name": "All Resistances Down",
-        "stackable": false
+        "stackable": true
     },
     "6850500": {
         "name": "Continuous HP Loss",
-        "stackable": false
+        "stackable": true
     },
     "6850700": {
         "name": "More Damage Taken After Evasion",
-        "stackable": false
+        "stackable": true
     },
     "6850800": {
         "name": "Repeated Evasions Lower Damage Negation",
-        "stackable": false
+        "stackable": true
     },
     "6850900": {
         "name": "Reduced Damage Negation for Flask Usages",
-        "stackable": false
+        "stackable": true
     },
     "6851200": {
         "name": "Lower Attack When Below Max HP",
-        "stackable": false
+        "stackable": true
     },
     "6851300": {
         "name": "Poison Buildup When Below Max HP",
-        "stackable": false
+        "stackable": true
     },
     "6851400": {
         "name": "Rot Buildup When Below Max HP",
-        "stackable": false
+        "stackable": true
     },
     "6851700": {
         "name": "Near Death Reduces Max HP",
-        "stackable": false
+        "stackable": true
     },
     "7000000": {
         "name": "Vigor",
@@ -1219,7 +1219,7 @@
     },
     "7000090": {
         "name": "Increased Maximum HP",
-        "stackable": false
+        "stackable": true
     },
     "7000100": {
         "name": "Mind",
@@ -1238,7 +1238,7 @@
     },
     "7000190": {
         "name": "Increased Maximum FP",
-        "stackable": false
+        "stackable": true
     },
     "7000200": {
         "name": "Endurance",
@@ -1257,7 +1257,7 @@
     },
     "7000290": {
         "name": "Increased Maximum Stamina",
-        "stackable": false
+        "stackable": true
     },
     "7000300": {
         "name": "Strength",
@@ -1385,78 +1385,78 @@
     },
     "7001400": {
         "name": "Physical Attack Up",
-        "stackable": false
+        "stackable": true
     },
     "7001401": {
         "name": "Physical Attack Up",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "7001402": {
         "name": "Physical Attack Up",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "7001403": {
         "name": "Physical Attack Up",
         "level": 3,
-        "stackable": false
+        "stackable": true
     },
     "7001500": {
         "name": "Magic Attack Power Up",
-        "stackable": false
+        "stackable": true
     },
     "7001501": {
         "name": "Magic Attack Power Up",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "7001502": {
         "name": "Magic Attack Power Up",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "7001600": {
         "name": "Fire Attack Power Up",
-        "stackable": false
+        "stackable": true
     },
     "7001601": {
         "name": "Fire Attack Power Up",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "7001602": {
         "name": "Fire Attack Power Up",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "7001700": {
         "name": "Lightning Attack Power Up",
-        "stackable": false
+        "stackable": true
     },
     "7001701": {
         "name": "Lightning Attack Power Up",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "7001702": {
         "name": "Lightning Attack Power Up",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "7001800": {
         "name": "Holy Attack Power Up",
-        "stackable": false
+        "stackable": true
     },
     "7001801": {
         "name": "Holy Attack Power Up",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "7001802": {
         "name": "Holy Attack Power Up",
         "level": 2,
-        "stackable": false
+        "stackable": true
     },
     "7001900": {
         "name": "Attacks Inflict Poison",
@@ -1548,19 +1548,19 @@
     },
     "7002600": {
         "name": "Magic Damage Negation Up",
-        "stackable": false
+        "stackable": true
     },
     "7002700": {
         "name": "Fire Damage Negation Up",
-        "stackable": false
+        "stackable": true
     },
     "7002800": {
         "name": "Lightning Damage Negation Up",
-        "stackable": false
+        "stackable": true
     },
     "7002900": {
         "name": "Holy Damage Negation Up",
-        "stackable": false
+        "stackable": true
     },
     "7003000": {
         "name": "Improved Poison Resistance",
@@ -1708,7 +1708,7 @@
     },
     "7030200": {
         "name": "HP restored when using cured meats, medicinal boluses, etc.",
-        "stackable": false
+        "stackable": true
     },
     "7030500": {
         "name": "[Wylder] Impaired damage negation, improved attack power & stamina after Art activation",
@@ -1970,7 +1970,7 @@
     },
     "7043600": {
         "name": "Improved Crystalian sorcery",
-        "stackable": false
+        "stackable": true
     },
     "7043700": {
         "name": "Improved Gravity Sorcery",
@@ -3011,11 +3011,11 @@
     },
     "8230000": {
         "name": "Improved Poise",
-        "stackable": false
+        "stackable": true
     },
     "8300000": {
         "name": "Improved Attack Power when Two-Handing",
-        "stackable": false
+        "stackable": true
     },
     "8300100": {
         "name": "Improved Stance-Breaking when Two-Handing",
@@ -3023,7 +3023,7 @@
     },
     "8310000": {
         "name": "Attack Up when Wielding Two Armaments",
-        "stackable": false
+        "stackable": true
     },
     "8310100": {
         "name": "Improved Stance-Breaking when Wielding Two Armaments",
@@ -3031,11 +3031,11 @@
     },
     "8320000": {
         "name": "Improved Chain Attack Finishers",
-        "stackable": false
+        "stackable": true
     },
     "8320100": {
         "name": "Improved Charge Attacks",
-        "stackable": false
+        "stackable": true
     },
     "8320200": {
         "name": "Strong Attacks Improve Poise",
@@ -3043,7 +3043,7 @@
     },
     "8320300": {
         "name": "Improved Jump Attacks",
-        "stackable": false
+        "stackable": true
     },
     "8320400": {
         "name": "Dmg Negation Up while Charging Attacks",
@@ -3051,7 +3051,7 @@
     },
     "8330000": {
         "name": "Improved Sorceries",
-        "stackable": false
+        "stackable": true
     },
     "8330100": {
         "name": "Improved Incantations",
@@ -3063,27 +3063,27 @@
     },
     "8330200": {
         "name": "Improved Charged Sorceries",
-        "stackable": false
+        "stackable": true
     },
     "8330300": {
         "name": "Improved Charged Incantation",
-        "stackable": false
+        "stackable": true
     },
     "8330400": {
         "name": "Improved Spell Casting Speed",
-        "stackable": false
+        "stackable": true
     },
     "8330500": {
         "name": "Extended Spell Duration",
-        "stackable": false
+        "stackable": true
     },
     "8330600": {
         "name": "Reduced Spell FP Cost",
-        "stackable": false
+        "stackable": true
     },
     "8330602": {
         "name": "Reduced spell FP cost",
-        "stackable": false
+        "stackable": true
     },
     "8330700": {
         "name": "Communion Grants Anti-Dragon Effect",
@@ -3095,16 +3095,16 @@
     },
     "8340000": {
         "name": "Improved Ranged Weapon Attacks",
-        "stackable": false
+        "stackable": true
     },
     "8340100": {
         "name": "Projectile Damage Drop-Off Reduced",
-        "stackable": false
+        "stackable": true
     },
     "8340102": {
         "name": "Projectile damage drop-off reduced",
         "level": 1,
-        "stackable": false
+        "stackable": true
     },
     "8350000": {
         "name": "Improved Skill Attack Power",
@@ -3116,7 +3116,7 @@
     },
     "8350200": {
         "name": "Reduced Skill FP Cost",
-        "stackable": false
+        "stackable": true
     },
     "8350300": {
         "name": "Skill Activation Improves Poise",
@@ -3172,7 +3172,7 @@
     },
     "8440000": {
         "name": "Improved Flask HP Restoration",
-        "stackable": false
+        "stackable": true
     },
     "8440100": {
         "name": "Flask Also Heals Allies",
@@ -3224,11 +3224,11 @@
     },
     "8510000": {
         "name": "Improved Item Discovery",
-        "stackable": false
+        "stackable": true
     },
     "8520000": {
         "name": "Less Likely to Be Targeted",
-        "stackable": false
+        "stackable": true
     },
     "8530000": {
         "name": "Multiple Periodical Glintblades",
@@ -3260,7 +3260,7 @@
     },
     "8610000": {
         "name": "HP Restoration upon Successive Attacks",
-        "stackable": false
+        "stackable": true
     },
     "8610100": {
         "name": "FP Restoration upon Successive Attacks",
@@ -3388,11 +3388,11 @@
     },
     "8650000": {
         "name": "HP Recovery From Successful Guarding",
-        "stackable": false
+        "stackable": true
     },
     "8650100": {
         "name": "FP Recovery From Successful Guarding",
-        "stackable": false
+        "stackable": true
     },
     "8652000": {
         "name": "Successful Guarding Ups Poise",

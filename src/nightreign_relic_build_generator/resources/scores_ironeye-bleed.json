@@ -6,12 +6,12 @@
         "[Ironeye] +1 additional Character Skill use",
         "Starting armament inflicts blood loss",
         "Continuous HP Recovery", // +2 each second
-        "HP Restoration upon Bow Attacks",  // +15hp per hit
     ],
     "100000000": [  // TIER 1
         "Physical Attack Up",  // +3%, +4%, +5%, +8.5%, +10%
         "Improved Initial Standard Attack",  // +13%
-        "Improved Bow Attack Power"  // +6.5%
+        "Improved Bow Attack Power",  // +6.5%
+        "HP Restoration upon Bow Attacks",  // +15hp per hit
     ],
     "10000000": [  // TIER 2
         "Slowly restore HP for self and nearby allies when HP is low",  // +0.5% +1 HP per second for 50s when HP below 20%
