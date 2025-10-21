@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from dataclasses import KW_ONLY, dataclass
 from logging import Handler
 from logging.handlers import RotatingFileHandler
@@ -139,6 +140,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="save slot index (0-9)",
         default=0,
     )
+    common.add_argument(
+        "--color",
+        choices=("auto", "always", "never"),
+        default="auto",
+        help=(
+            "Control colorized output: "
+            "'auto' (default), 'always', or 'never'."
+        ),
+    )
 
     subparsers.add_parser(
         "dump-relics",
@@ -211,9 +221,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         help="Disable consideration of deep relics to generate normal builds.",
     )
     compute_parser.add_argument(
-        "--no-color", action="store_true", help="Disable colorized output."
-    )
-    compute_parser.add_argument(
         "-t",
         "--tree",
         action="store_true",
@@ -239,6 +246,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 # append=False
             )
         ),
+    )
+    TermStyle.set_enabled(
+        args.color == "always"
+        or (args.color == "auto" and sys.stdout.isatty())
     )
 
     if args.operation == "list-builtins":
@@ -291,8 +302,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             incomplete_relics.clear()  # free this memory
             if args.operation == "compute":
-                if args.no_color:
-                    TermStyle.set_enabled(False)
                 if args.scores:
                     score_json = Path(args.scores).read_text(encoding="utf-8")
                 elif args.builtin_scores:

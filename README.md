@@ -87,6 +87,9 @@ looks at the first save slot in that file (index 0).  However, you can use the
 `-i/--index` argument to specify a different index.  Indexes 0-9 refer to save
 slots 1-10.
 
+The following arguments can customize behavior:
+- --color, Linux only; allows overriding colorization (default auto)
+
 ### dump-relics
 This subcommand doesn't find any builds, it simply dumps the relics found in
 your save file.  Even though the save slot index defaults to 0, here's an
@@ -117,7 +120,6 @@ Non-exclusive arguments:
 - -c/--character-class, the name of the class whose vessels are used
 - -l/--limit, the number of top-scoring builds to keep (default 50)
 - -n/--no-deep, pass this flag to score builds leaving deep relic slots empty
-- --no-color, disabled colorized output (NOTE: colors are Linux only)
 - -t/--tree, displays results grouped by vessel with relic options
 - -v/--vessel, enables whitelist mode and whitelists a specific vessel.
   Can be passed multiple times.

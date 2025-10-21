@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import struct
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass, field, fields
 from enum import Enum, StrEnum, auto, unique
 from functools import cached_property
+from heapq import heappush, heappushpop, nsmallest
 from itertools import chain
 from pathlib import Path
 from types import MappingProxyType
@@ -172,21 +174,24 @@ class RelicDebugData:
     metadata_data: ByteString
     inventory_offset: int
     inventory_data: ByteString
+    inventory_id: int
 
     def __str__(self) -> str:
-        return os.linesep.join(
-            [
-                f"^ metadata offset: {self.metadata_offset}",
-                f"  = {self.metadata_data.hex()}",
-                f"^ inventory offset: {self.inventory_offset}",
-                f"  = {self.inventory_data.hex()}",
-            ]
+        return json.dumps(
+            {
+                member.name: (
+                    value.hex()
+                    if hasattr(value := getattr(self, member.name), "hex")
+                    else value
+                )
+                for member in fields(self)
+            },
+            indent=4,
         )
 
 
 @dataclass(frozen=True)
 class RelicData:
-    inventory_id: int
     relic_id: int
     effect_ids: tuple[int, ...]
     curse_ids: tuple[int, ...]
@@ -199,6 +204,49 @@ class SaveData:
 
     data: bytes = field(repr=False)
     title: str = ""
+
+    def get_block(self, offset: int, *, size: int) -> ByteString:
+        return memoryview(self.data)[offset : offset + size]
+
+    def find_all_offsets(self, data: ByteString) -> list[int]:
+        offsets: list[int] = []
+        start = 0
+        while True:
+            i = self.data.find(data, start)
+            if i == -1:
+                break
+            offsets.append(i)
+            start = i + 1
+        return offsets
+
+    def find_closest_offsets(
+        self, a: ByteString, b: ByteString, *, count: int
+    ) -> list[tuple[int, int, int]]:
+        a_offsets = sorted(self.find_all_offsets(a))
+        b_offsets = sorted(self.find_all_offsets(b))
+        if not a_offsets or not b_offsets:
+            return []
+
+        heap: list[tuple[int, int, int]] = []  # store (-distance, a, b)
+        i = j = 0
+        while i < len(a_offsets) and j < len(b_offsets):
+            av, bv = a_offsets[i], b_offsets[j]
+            diff = av - bv
+            dist = abs(diff)
+            item = (-dist, av, bv)
+            if len(heap) < count:
+                heappush(heap, item)
+            elif dist < -heap[0][0]:
+                heappushpop(heap, item)
+            if diff < 0:
+                i += 1
+            else:
+                j += 1
+
+        return [
+            (a, b, abs(d))
+            for d, a, b in nsmallest(count, heap, key=lambda x: -x[0])
+        ]
 
     @cached_property
     def metadata_offset(self) -> int | None:
@@ -222,7 +270,6 @@ class SaveData:
             while entity := Entity.from_data(Section.METADATA, view, offset):
                 if entity.header.entity_type is EntityType.RELIC:
                     relics[entity.header.inventory_id] = RelicData(
-                        inventory_id=entity.header.inventory_id,
                         relic_id=cast(
                             int, struct.unpack_from("<I", entity.data, 4)[0]
                         )
@@ -246,6 +293,7 @@ class SaveData:
                             metadata_data=entity.data,
                             inventory_offset=0,
                             inventory_data=b"",
+                            inventory_id=entity.header.inventory_id,
                         ),
                     )
                 else:
@@ -278,7 +326,9 @@ class SaveData:
         return None
 
     @cached_property
-    def relics(self) -> tuple[RelicData, ...]:
+    def relics_and_inventory_end_offset(
+        self,
+    ) -> tuple[tuple[RelicData, ...], int | None]:
         relics: list[RelicData] = []
         offset = self.inventory_offset
         metadata_relic_table = self.metadata_relic_table
@@ -292,7 +342,6 @@ class SaveData:
                     if relic_data:
                         relics.append(
                             RelicData(
-                                inventory_id=entity.header.inventory_id,
                                 relic_id=relic_data.relic_id,
                                 effect_ids=relic_data.effect_ids,
                                 curse_ids=relic_data.curse_ids,
@@ -305,6 +354,7 @@ class SaveData:
                                     ),
                                     inventory_offset=offset,
                                     inventory_data=entity.data,
+                                    inventory_id=entity.header.inventory_id,
                                 ),
                             )
                         )
@@ -319,7 +369,15 @@ class SaveData:
                         f" type: {entity.header.entity_type}"
                     )
                 offset += len(entity.data)
-        return tuple(relics)
+        return (tuple(relics), offset)
+
+    @property
+    def relics(self) -> tuple[RelicData, ...]:
+        return self.relics_and_inventory_end_offset[0]
+
+    @property
+    def inventory_end_offset(self) -> int | None:
+        return self.relics_and_inventory_end_offset[1]
 
 
 def load_save(data: ByteString, entry_name: str) -> SaveData:
