@@ -7,11 +7,11 @@ from heapq import heappush, heapreplace
 from types import MappingProxyType
 from typing import Literal, Mapping, NamedTuple, Never, Sequence, Union
 
-import json5
 from tqdm.std import tqdm as Tqdm
 
 from .nightreign import Color, Effect, Relic, VesselTree
 from .term_style import TermStyle
+from .utility import json5_loads
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +242,7 @@ class BuildFinder:
     def __post_init__(
         self, relics: Sequence[Relic], score_json: str, prune: int
     ) -> None:
-        data = json5.loads(score_json)
+        data = json5_loads(score_json)
         if not isinstance(data, dict):
             raise ValueError(f"root element not a dict: {type(data).__name__}")
 

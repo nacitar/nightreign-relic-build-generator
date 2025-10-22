@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import codecs
+import json
 import re
 from importlib.resources import files
-from typing import ByteString
+from typing import Any, ByteString
 
 RESOURCE_FILES = files(f"{__package__}.resources")
 
@@ -41,3 +42,26 @@ def list_builtin_score_resources() -> list[str]:
         for resource_name in list_resources()
         if (match := SCORE_RESOURCE_PATTERN.fullmatch(resource_name))
     ]
+
+
+_JSON5_COMMENT_PATTERN = re.compile(
+    r"""
+    (                               # 1: double-quoted string
+        "(?:\\.|[^"\\])*"
+    )
+  | (                               # 2: single-quoted string
+        '(?:\\.|[^'\\])*'
+    )
+  | (?:[ \t]*//[^\r\n]*)            # remove spaces + single-line comment
+  | (?:[ \t]*/\*.*?\*/)             # remove spaces + block comment (ungreedy)
+    """,
+    re.VERBOSE | re.DOTALL,
+)
+
+
+def json5_loads(source_text: str) -> Any:
+    def comment_replacer(match: re.Match[str]) -> str:
+        return match.group(1) or match.group(2) or ""
+
+    no_comments = _JSON5_COMMENT_PATTERN.sub(comment_replacer, source_text)
+    return json.loads(re.sub(r",(?=\s*[\]}])", "", no_comments))

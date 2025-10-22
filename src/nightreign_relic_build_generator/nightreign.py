@@ -13,12 +13,11 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import ByteString, ClassVar, Iterator, Mapping, Sequence, cast
 
-import json5
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
 from .term_style import TermStyle
-from .utility import get_resource_text
+from .utility import get_resource_text, json5_loads
 
 logger = logging.getLogger(__name__)
 
@@ -628,10 +627,10 @@ class Database:
         )
 
     def __post_init__(self) -> None:
-        effect_id_data: dict[str, dict[str, str | int | bool]] = json5.loads(
+        effect_id_data: dict[str, dict[str, str | int | bool]] = json5_loads(
             get_resource_text("effects.json")
         )
-        relic_id_data: dict[str, dict[str, str | int]] = json5.loads(
+        relic_id_data: dict[str, dict[str, str | int]] = json5_loads(
             get_resource_text("relic-ids.json")
         )
 
