@@ -264,8 +264,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         relics: list[Relic] = []
         incomplete_relics: list[Relic] = []
         deep_count = 0
+        unsellable_relic_count = 0
         for relic_data in save_data.relics:
             relic = database.get_relic(relic_data)
+            if not relic.is_sellable:
+                unsellable_relic_count += 1
             if relic.is_incomplete:
                 incomplete_relics.append(relic)
             else:
@@ -275,10 +278,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                         continue
                 relics.append(relic)
 
-        relic_count_str = (
-            f"Relics: {len(relics) - deep_count} standard, {deep_count} deep"
-            f", {len(incomplete_relics)} incomplete."
-        )
+        relic_count_parts = [
+            f"{len(relics) - deep_count} standard",
+            f"{deep_count} deep",
+        ]
+        if unsellable_relic_count:
+            relic_count_parts.append(f"{unsellable_relic_count} unsellable")
+        if incomplete_relics:
+            relic_count_parts.append(f"{len(incomplete_relics)} incomplete")
+
+        relic_count_str = f"Relics: {", ".join(relic_count_parts)}."
         logger.info(relic_count_str)
         if incomplete_relics:
             logger.warning(

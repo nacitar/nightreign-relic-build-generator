@@ -194,6 +194,7 @@ class RelicData:
     relic_id: int
     effect_ids: tuple[int, ...]
     curse_ids: tuple[int, ...]
+    is_favorite: bool
     debug_data: RelicDebugData
 
 
@@ -287,6 +288,7 @@ class SaveData:
                                 struct.unpack_from("<III", entity.data, 56),
                             )
                         ),
+                        is_favorite=False,
                         debug_data=RelicDebugData(
                             metadata_offset=offset,
                             metadata_data=entity.data,
@@ -344,6 +346,7 @@ class SaveData:
                                 relic_id=relic_data.relic_id,
                                 effect_ids=relic_data.effect_ids,
                                 curse_ids=relic_data.curse_ids,
+                                is_favorite=bool(entity.data[12]),
                                 debug_data=RelicDebugData(
                                     metadata_offset=(
                                         relic_data.debug_data.metadata_offset
@@ -480,6 +483,8 @@ class Relic:
     effects: tuple[Effect, ...]
     curses: tuple[Effect, ...]
     id: int
+    is_favorite: bool
+    is_sellable: bool
     debug_data: RelicDebugData  # only used for debugging
 
     def __post_init__(self) -> None:
@@ -511,7 +516,13 @@ class Relic:
 
     def str_lines(self, *, color_prefix: bool = True) -> list[str]:
         lines: list[str] = []
-        prefix = f"[{self.color}] " if color_prefix else ""
+        prefix = ""
+        if color_prefix:
+            prefix += f"[{self.color}]"
+        if self.is_favorite:
+            prefix += "*"
+        if prefix:
+            prefix += " "
         lines.append(f"{TermStyle.BOLD}{prefix}{self.name}{TermStyle.RESET}")
         for i in range(len(self.effects)):
             effect = self.effects[i]
@@ -536,6 +547,7 @@ class Database:
     class _RelicMetadata:
         color: Color
         size: int
+        sellable: bool
 
     SIZE_NAMES: ClassVar[tuple[str, ...]] = ("Delicate", "Polished", "Grand")
     relic_id_to_info: dict[int, _RelicMetadata] = field(
@@ -599,6 +611,8 @@ class Database:
                 effects=tuple(self.get_effect(id) for id in data.effect_ids),
                 curses=tuple(self.get_effect(id) for id in data.curse_ids),
                 id=data.relic_id,
+                is_favorite=data.is_favorite,
+                is_sellable=False,
                 debug_data=data.debug_data,
             )
         if info.size != filled_effect_count:
@@ -623,6 +637,8 @@ class Database:
             effects=tuple(self.get_effect(id) for id in data.effect_ids),
             curses=tuple(self.get_effect(id) for id in data.curse_ids),
             id=data.relic_id,
+            is_favorite=data.is_favorite,
+            is_sellable=info.sellable,
             debug_data=data.debug_data,
         )
 
@@ -630,7 +646,7 @@ class Database:
         effect_id_data: dict[str, dict[str, str | int | bool]] = json5_loads(
             get_resource_text("effects.json")
         )
-        relic_id_data: dict[str, dict[str, str | int]] = json5_loads(
+        relic_id_data: dict[str, dict[str, str | int | bool]] = json5_loads(
             get_resource_text("relic-ids.json")
         )
 
@@ -651,8 +667,9 @@ class Database:
             name = str(attributes.get("name", ""))
             if name != standard_name:
                 self.relic_names[int(relic_id)] = name
+            sellable = bool(attributes.get("sellable", True))
             self.relic_id_to_info[int(relic_id)] = type(self)._RelicMetadata(
-                color=color, size=size
+                color=color, size=size, sellable=sellable
             )
 
         for effect_id, effect_attributes in effect_id_data.items():

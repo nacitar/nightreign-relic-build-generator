@@ -145,273 +145,335 @@
     },
     "1000": {
         "size": 1,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1010": {
         "size": 1,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1020": {
         "size": 1,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1030": {
         "size": 1,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1040": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1050": {
         "size": 1,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1060": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1070": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1080": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1090": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1100": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1110": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1120": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1130": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1140": {
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1150": {
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1160": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1170": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1180": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1190": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1200": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1210": {  // NOTE: misnamed/miscolored IN THE GAME'S FILES; not my error.
         "name": "Grand Tranquil Scene",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1220": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1230": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1240": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1250": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1260": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1270": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1400": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1410": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1420": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1430": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1440": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1450": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1460": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "1470": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1480": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1490": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "1500": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "1510": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "1520": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "2000": {
         "name": "Night of the Beast",
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "2001": {
         "name": "Dark Night of the Beast",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "2010": {
         "name": "Night of the Baron",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "2011": {
         "name": "Dark Night of the Baron",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "2020": {
         "name": "Night of the Wise",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "2021": {
         "name": "Dark Night of the Wise",
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "2030": {
         "name": "Night of the Fathom",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "2031": {
         "name": "Dark Night of the Fathom",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "2040": {
         "name": "Night of the Demon",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "2041": {
         "name": "Dark Night of the Demon",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "2050": {
         "name": "Night of the Champion",
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "2051": {
         "name": "Dark Night of the Champion",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "2060": {
         "name": "Night of the Miasma",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "2061": {
         "name": "Dark Night of the Miasma",
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "2100": {
         "name": "Night of the Lord",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "10000": {
         "name": "Old Pocketwatch",
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "10001": {
         "name": "Besmirched Frame",
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "10002": {
         "name": "Fell Omen Fetish",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "11000": {
         "name": "Slate Whetstone",
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "11001": {
         "name": "The Wylder's Earring",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "11002": {
         "name": "Silver Tear",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "11003": {
         "size": 1,
@@ -424,22 +486,26 @@
     "12000": {
         "name": "Third Volume",
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "12001": {
         "name": "Stone Stake",
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "12002": {
         "name": "Witch's Brooch",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "12003": {
         "name": "Cracked Witch's Brooch",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "12004": {
         "size": 1,
@@ -460,355 +526,440 @@
     "13001": {
         "name": "Cracked Sealing Wax",
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "13002": {
         "name": "Edge of Order",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "14000": {
         "name": "Golden Dew",
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "14001": {
         "name": "Crown Medal",
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "14002": {
         "name": "Blessed Iron Coin",
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "15000": {
         "name": "Torn Braided Cord",
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "15002": {
         "name": "Black Claw Necklace",
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "16001": {
         "name": "Small Makeup Brush",
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "16002": {
         "name": "Old Portrait",
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "17001": {
         "name": "Vestige of Night",
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "17002": {
         "name": "Bone-Like Stone",
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "18000": {
         "name": "Blessed Flowers",
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "18002": {
         "name": "Golden Sprout",
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20000": {
         "size": 1,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20001": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20002": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20003": {
         "size": 1,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20004": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20005": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20006": {
         "size": 1,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20007": {
         "size": 2,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20008": {
         "size": 3,
-        "color": "Red"
+        "color": "Red",
+        "sellable": false
     },
     "20009": {
         "size": 1,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20010": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20011": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20012": {
         "size": 1,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20013": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20014": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20015": {
         "size": 1,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20016": {
         "size": 2,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20017": {
         "size": 3,
-        "color": "Blue"
+        "color": "Blue",
+        "sellable": false
     },
     "20018": {
         "size": 1,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20019": {
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20020": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20021": {
         "size": 1,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20022": {
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20023": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20024": {
         "size": 1,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20025": {
         "size": 2,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20026": {
         "size": 3,
-        "color": "Yellow"
+        "color": "Yellow",
+        "sellable": false
     },
     "20027": {
         "size": 1,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20028": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20029": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20030": {
         "size": 1,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20031": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20032": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20033": {
         "size": 1,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20034": {
         "size": 2,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "20035": {
         "size": 3,
-        "color": "Green"
+        "color": "Green",
+        "sellable": false
     },
     "30000": {
         "size": 1,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30001": {
         "size": 2,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30002": {
         "size": 3,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30003": {
         "size": 1,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30004": {
         "size": 2,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30005": {
         "size": 3,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30006": {
         "size": 1,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30007": {
         "size": 2,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30008": {
         "size": 3,
-        "color": "DeepRed"
+        "color": "DeepRed",
+        "sellable": false
     },
     "30009": {
         "size": 1,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30010": {
         "size": 2,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30011": {
         "size": 3,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30012": {
         "size": 1,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30013": {
         "size": 2,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30014": {
         "size": 3,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30015": {
         "size": 1,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30016": {
         "size": 2,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30017": {
         "size": 3,
-        "color": "DeepBlue"
+        "color": "DeepBlue",
+        "sellable": false
     },
     "30018": {
         "size": 1,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30019": {
         "size": 2,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30020": {
         "size": 3,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30021": {
         "size": 1,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30022": {
         "size": 2,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30023": {
         "size": 3,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30024": {
         "size": 1,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30025": {
         "size": 2,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30026": {
         "size": 3,
-        "color": "DeepYellow"
+        "color": "DeepYellow",
+        "sellable": false
     },
     "30027": {
         "size": 1,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30028": {
         "size": 2,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30029": {
         "size": 3,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30030": {
         "size": 1,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30031": {
         "size": 2,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30032": {
         "size": 3,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30033": {
         "size": 1,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30034": {
         "size": 2,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "30035": {
         "size": 3,
-        "color": "DeepGreen"
+        "color": "DeepGreen",
+        "sellable": false
     },
     "1000000": {
         "size": 1,
