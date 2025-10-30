@@ -17,7 +17,6 @@ from typing import (
     Iterable,
     Iterator,
     TextIO,
-    Type,
     TypeVar,
     cast,
     get_type_hints,
@@ -53,7 +52,7 @@ def get_text_io(source: TextProvider) -> Iterator[TextIO]:
         yield source  # TextIO; already open, do not close
 
 
-def checked_cast(value: object, expected_type: Type[T]) -> T:
+def checked_cast(value: object, expected_type: type[T]) -> T:
     if not isinstance(value, expected_type):
         raise TypeError(
             f"Expected {expected_type.__name__}, got {type(value).__name__}"
@@ -157,7 +156,7 @@ def csv_load(
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: Type[T],
+    dataclass: type[T],
     field_metadata_key: str = "csv_key",
 ) -> Iterable[T]: ...
 
@@ -165,7 +164,7 @@ def csv_load(
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: Type[Any] = dict,
+    dataclass: type[Any] = dict,
     field_metadata_key: str = "csv_key",
 ) -> Iterable[Any]:
     """Load CSV data into dicts or dataclass instances.
