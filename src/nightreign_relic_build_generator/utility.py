@@ -42,7 +42,7 @@ def get_text(source: TextProvider) -> str:
 
 
 @contextmanager
-def get_text_io(source: TextProvider) -> Iterator[TextIO]:
+def open_text_io(source: TextProvider) -> Iterator[TextIO]:
     """Yield a readable TextIO.  Must always be used as a context manager."""
     if isinstance(source, Path):
         yield source.open(encoding="utf-8")
@@ -147,8 +147,8 @@ def _build_converter(typ: type[T]) -> Callable[[str], Any]:
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: type[dict[str, str]],
-    field_metadata_key: str = "csv_key",
+    dataclass: type[dict[str, str]] = ...,
+    field_metadata_key: str = ...,
 ) -> Iterable[dict[str, str]]: ...
 
 
@@ -156,8 +156,8 @@ def csv_load(
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: type[T],
-    field_metadata_key: str = "csv_key",
+    dataclass: type[T] = ...,
+    field_metadata_key: str = ...,
 ) -> Iterable[T]: ...
 
 
@@ -172,7 +172,7 @@ def csv_load(
     For custom field types, a classmethod `from_string(cls, s: str)` may be
     implemented to control how an instance is created from a CSV cell string.
     """
-    with get_text_io(source) as source_io:
+    with open_text_io(source) as source_io:
         reader = csv.DictReader(source_io)
 
         if dataclass is dict:
