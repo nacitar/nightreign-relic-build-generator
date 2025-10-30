@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 from . import bnd4
 from .term_style import TermStyle
-from .utility import get_resource_text, json5_loads
+from .utility import get_resource_text, json5_load
 
 logger = logging.getLogger(__name__)
 
@@ -204,6 +204,9 @@ class SaveData:
 
     data: bytes = field(repr=False)
     title: str = ""
+
+    def export(self, path: Path) -> None:
+        path.write_bytes(self.data)
 
     def get_block(self, offset: int, *, size: int) -> ByteString:
         return memoryview(self.data)[offset : offset + size]
@@ -643,10 +646,10 @@ class Database:
         )
 
     def __post_init__(self) -> None:
-        effect_id_data: dict[str, dict[str, str | int | bool]] = json5_loads(
+        effect_id_data: dict[str, dict[str, str | int | bool]] = json5_load(
             get_resource_text("effects.json")
         )
-        relic_id_data: dict[str, dict[str, str | int | bool]] = json5_loads(
+        relic_id_data: dict[str, dict[str, str | int | bool]] = json5_load(
             get_resource_text("relic-ids.json")
         )
 

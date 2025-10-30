@@ -260,6 +260,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         logger.info(f"Looking for {save_title} in save: {args.sl2_file}")
         save_data = load_save_file(Path(args.sl2_file), save_title)
         logger.info(f"Loaded entry: {save_data.title}")
+
+        import pdb
+
+        # pdb.set_trace()
+        # save_data.export(Path("raw_save.bin"))
+        from .database import FmgDatabase, VesselMetadata
+        from .utility import csv_load, json5_load
+
+        vessel_metadatas = list(
+            csv_load(
+                Path("/home/nacitar/scm/personal/")
+                / "nightreign-relic-build-generator"
+                / "mining"
+                / "stand.csv",
+                dataclass=VesselMetadata,
+            )
+        )
+        print(vessel_metadatas)
+        pdb.set_trace()
+
+        fmg_db = FmgDatabase()
+        result = fmg_db.import_fmg(
+            json5_load(Path("/home/nacitar/smithbox/item-text-english.json"))
+        )
+        print(repr(result))
+
         database = Database()
         relics: list[Relic] = []
         incomplete_relics: list[Relic] = []

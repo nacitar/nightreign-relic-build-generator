@@ -53,28 +53,28 @@ wine Smithbox.exe
 
 ---
 
-## ⚙️ Step 4 — Export EquipParamAntique Data
+## ⚙️ Step 4 — Export Useful Params
+
+The sections you want to export, and the filenames I suggest for them:
+|   Section Name    |  Provides   | Filename |
+|-------------------|-------------|----------|
+| EquipParamAntique |  Relic IDs  | antique  |
+| AntiqueStandParam | Vessel info |  stand   |
+
 
 1. From the menubar, open **Param Editor**
-2. In the search box at the top of the left pane, type:
-   ```
-   EquipParamAntique
-   ```
+2. In the search box at the top of the left pane, type the name of the section. 
 3. Click the result to open it and ensure you can see its values in the **Rows** pane.
 4. From the menubar, select:  
    **Data → Export CSV → All Rows → Export to File… → Export All Fields**
-5. Save the file wherever you like, using a clear name such as:
-
-   ```
-   antique.csv
-   ```
+5. Save the file wherever you like, using a clear name such as the one suggested.
+NOTE: you do not need to type in the extension; these will be .csv files.
 
 ---
 
 ## 🐍 Step 5 — Parse the Exported Data
 
-After you have both files (`strings.json` and `antique.csv`), place them in
-your CWD and run the parsing script:
+After you have all files, place them in your CWD and run the parsing script:
 
 ```bash
 ./parse.py
@@ -86,10 +86,11 @@ This will process the exported data and generate output in the format used by `r
 
 ## ✅ Summary of Output Locations
 
-| File | Source | Default Export Path |
+| File | Source  | Default Export Path |
 |------|---------|---------------------|
-| `strings.json` | Text Editor export | `<project>/.smithbox/Workflow/Exported Text/strings.json` |
+| `strings.json` | Text Editor export  | `<project>/.smithbox/Workflow/Exported Text/strings.json` |
 | `antique.csv`  | Param Editor export | user-chosen (e.g. `~/smithbox/antique.csv`) |
+| `stand.csv`    | Param Editor export | user-chosen (e.g. `~/smithbox/stand.csv`) |
 
 ---
 
