@@ -5,6 +5,7 @@ import csv
 import json
 import os
 import re
+import threading
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from importlib.resources import files
@@ -19,7 +20,6 @@ from typing import (
     Sequence,
     TextIO,
     TypeVar,
-    cast,
     get_type_hints,
     overload,
 )
@@ -125,23 +125,43 @@ def bool_from_string(value: str) -> bool:
     return value.lower() in ("1", "true", "yes")
 
 
+_CONVERTER_CACHE: dict[type[Any], Callable[[str], Any]] = {
+    str: str,
+    int: int,
+    float: float,
+    bool: bool_from_string,
+}
+_CONVERTER_LOCK = threading.RLock()
+
+
+def register_converter(
+    typ: type[Any], converter: Callable[[str], Any]
+) -> None:
+    """Register a new converter for a type. Does not replace existing ones."""
+    with _CONVERTER_LOCK:
+        if typ in _CONVERTER_CACHE:
+            raise KeyError(
+                f"Converter already registered for type: {typ.__name__}"
+            )
+        _CONVERTER_CACHE[typ] = converter
+
+
 def _build_converter(typ: type[T]) -> Callable[[str], Any]:
     """Return a function that converts a CSV cell string to the target type."""
-    if typ in (str, int, float):
-        return typ
-    if typ is bool:
-        return bool_from_string
-    # TODO: allow hooking?
+    with _CONVERTER_LOCK:
+        if (cached := _CONVERTER_CACHE.get(typ)) is not None:
+            return cached
 
-    if callable(method := getattr(typ, "from_string", None)):
-        return lambda string: method(string)
+        if callable(method := getattr(typ, "from_string", None)):
 
-    # fallback: try calling the constructor
-    def fallback(value: str) -> Any:
-        ctor = cast(Callable[[str], Any], typ)
-        return ctor(value)
+            def converter(value: str) -> Any:
+                return method(value)  # call T.from_string
 
-    return fallback
+        else:
+            raise TypeError(f"No conversion registered for {typ.__name__}")
+
+        register_converter(typ, converter)
+        return converter
 
 
 @overload
