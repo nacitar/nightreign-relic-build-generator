@@ -131,7 +131,7 @@ _CONVERTER_CACHE: dict[type[Any], Callable[[str], Any]] = {
     float: float,
     bool: bool_from_string,
 }
-_CONVERTER_LOCK = threading.RLock()
+_CONVERTER_LOCK = threading.Lock()
 
 
 def register_converter(
@@ -149,19 +149,16 @@ def register_converter(
 def _build_converter(typ: type[T]) -> Callable[[str], Any]:
     """Return a function that converts a CSV cell string to the target type."""
     with _CONVERTER_LOCK:
-        if (cached := _CONVERTER_CACHE.get(typ)) is not None:
-            return cached
+        if (converter := _CONVERTER_CACHE.get(typ)) is None:
+            if callable(method := getattr(typ, "from_string", None)):
 
-        if callable(method := getattr(typ, "from_string", None)):
+                def converter(value: str) -> Any:
+                    return method(value)  # call T.from_string
 
-            def converter(value: str) -> Any:
-                return method(value)  # call T.from_string
-
-        else:
-            raise TypeError(f"No conversion registered for {typ.__name__}")
-
-        register_converter(typ, converter)
-        return converter
+                _CONVERTER_CACHE[typ] = converter
+            else:
+                raise TypeError(f"No conversion registered for {typ.__name__}")
+    return converter
 
 
 @overload
