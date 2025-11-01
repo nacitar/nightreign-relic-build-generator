@@ -16,6 +16,7 @@ from typing import (
     Callable,
     Iterable,
     Iterator,
+    Sequence,
     TextIO,
     TypeVar,
     cast,
@@ -164,38 +165,45 @@ def csv_load(
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: type[Any] = dict,
+    dataclass: type[T] | None = None,
     field_metadata_key: str = "csv_key",
-) -> Iterable[Any]:
+    column_names: Sequence[str] | None = None,
+    delimiter: str = ",",
+) -> Iterable[T] | Iterable[dict[str, str]]:
     """Load CSV data into dicts or dataclass instances.
 
     For custom field types, a classmethod `from_string(cls, s: str)` may be
     implemented to control how an instance is created from a CSV cell string.
     """
     with open_text_io(source) as source_io:
-        reader = csv.DictReader(source_io)
-
-        if dataclass is dict:
-            yield from reader
+        reader = csv.reader(source_io, delimiter=delimiter)
+        column_names = next(reader) if column_names is None else column_names
+        if dataclass is None:
+            yield from (dict(zip(column_names, row)) for row in reader)
             return
-
         if not is_dataclass(dataclass):
             raise TypeError(f"{dataclass} must be a dataclass or dict")
-
+        column_indices = {name: i for i, name in enumerate(column_names)}
         type_hints = get_type_hints(dataclass)
-        field_map: dict[str, tuple[str, Callable[[str], Any]]] = {}
-
-        for f in fields(dataclass):
-            csv_key = f.metadata.get(field_metadata_key, f.name)
-            if not csv_key:
-                continue
-            typ = type_hints.get(f.name, str)
-            field_map[f.name] = (csv_key, _build_converter(typ))
-
-        for row in reader:
-            values: dict[str, Any] = {}
-            for name, (csv_key, conv) in field_map.items():
-                raw = row.get(csv_key)
-                if raw is not None:
-                    values[name] = conv(raw)
-            yield dataclass(**values)
+        field_map = {
+            field.name: (
+                index,
+                _build_converter(type_hints.get(field.name, str)),
+            )
+            for field in fields(dataclass)
+            if (
+                index := column_indices.get(
+                    field.metadata.get(field_metadata_key, field.name), None
+                )
+            )
+            is not None
+        }
+        yield from (
+            dataclass(
+                **{
+                    name: conv(row[index])
+                    for name, (index, conv) in field_map.items()
+                }
+            )
+            for row in reader
+        )
