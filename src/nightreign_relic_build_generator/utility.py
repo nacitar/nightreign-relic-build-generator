@@ -207,21 +207,34 @@ def csv_load(
     """
     with open_text_io(source) as source_io:
         reader = csv.reader(source_io, delimiter=delimiter)
+        if init_arguments is None:
+            init_arguments = {}
         if column_names is None:
             column_names = next(reader)
-        if dataclass is None:
-            yield from (dict(zip(column_names, row)) for row in reader)
-            return
-        if not is_dataclass(dataclass):
-            raise TypeError(f"{dataclass} must be a dataclass or dict")
         column_indices = {name: i for i, name in enumerate(column_names)}
-        type_hints = get_type_hints(dataclass)
-
-        if field_to_column_name is None:
-            field_to_column_name = {
-                field.name: field.metadata.get(field_metadata_key, field.name)
-                for field in fields(dataclass)
-            }
+        if dataclass is not None:
+            if not is_dataclass(dataclass):
+                raise TypeError(
+                    f"dataclass argument isn't a dataclass: {dataclass}"
+                )
+            if init_function is None:
+                init_function = dataclass
+            if field_to_column_name is None:
+                field_to_column_name = {
+                    field.name: field.metadata.get(
+                        field_metadata_key, field.name
+                    )
+                    for field in fields(dataclass)
+                }
+            type_hints = get_type_hints(dataclass)
+        else:
+            if not init_function:
+                init_function = dict
+            if field_to_column_name is None:
+                field_to_column_name = {
+                    column_name: column_name for column_name in column_names
+                }
+            type_hints = {}
         field_to_index_and_converter = {
             field_name: (
                 index,
@@ -230,11 +243,9 @@ def csv_load(
             for field_name, column_name in field_to_column_name.items()
             if (index := column_indices.get(column_name)) is not None
         }
-        if init_function is None:
-            init_function = dataclass
         yield from (
             init_function(
-                **(init_arguments or {}),
+                **init_arguments,
                 **{
                     name: conv(row[index])
                     for name, (

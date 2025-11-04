@@ -92,3 +92,22 @@ def test_csv_load_dataclass_custom_init() -> None:
         assert instance.from_method.value == int(tokens[3])
         assert instance.string == tokens[4]
         assert instance.extra_argument == 5
+
+
+def test_csv_load_dict() -> None:
+    values = ["1,3.14,2,3,Hello", "4,2.71,5,6,Goodbye"]
+    i = 0
+    for instance in csv_load(
+        ["number,float_number,from_registered,from_method,string"] + values,
+        field_to_column_name={
+            "the_float": "float_number",
+            "the_string": "string",
+        },
+        init_arguments={"extra_argument": "extra"},
+    ):
+        tokens = values[i].split(",")
+        i = i + 1
+        assert instance["the_float"] == tokens[1]
+        assert instance["the_string"] == tokens[4]
+        assert instance["extra_argument"] == "extra"
+        assert len(instance) == 3
