@@ -165,8 +165,13 @@ def _build_converter(typ: type[T]) -> Callable[[str], Any]:
 def csv_load(
     source: TextProvider,
     *,
-    dataclass: type[dict[str, str]] = ...,
+    delimiter: str = ...,
+    column_names: Sequence[str] | None = ...,
+    dataclass: None = ...,
     field_metadata_key: str = ...,
+    field_to_column_name: dict[str, str] | None = ...,
+    init_arguments: dict[str, Any] | None = ...,
+    init_function: Callable[..., dict[str, str]] | None = ...,
 ) -> Iterable[dict[str, str]]: ...
 
 
@@ -174,18 +179,26 @@ def csv_load(
 def csv_load(
     source: TextProvider,
     *,
+    delimiter: str = ...,
+    column_names: Sequence[str] | None = ...,
     dataclass: type[T] = ...,
     field_metadata_key: str = ...,
+    field_to_column_name: dict[str, str] | None = ...,
+    init_arguments: dict[str, Any] | None = ...,
+    init_function: Callable[..., T] | None = ...,
 ) -> Iterable[T]: ...
 
 
 def csv_load(
     source: TextProvider,
     *,
+    delimiter: str = ",",
+    column_names: Sequence[str] | None = None,
     dataclass: type[T] | None = None,
     field_metadata_key: str = "csv_key",
-    column_names: Sequence[str] | None = None,
-    delimiter: str = ",",
+    field_to_column_name: dict[str, str] | None = None,
+    init_arguments: dict[str, Any] | None = None,
+    init_function: Callable[..., T | dict[str, str]] | None = None,
 ) -> Iterable[T] | Iterable[dict[str, str]]:
     """Load CSV data into dicts or dataclass instances.
 
@@ -194,7 +207,8 @@ def csv_load(
     """
     with open_text_io(source) as source_io:
         reader = csv.reader(source_io, delimiter=delimiter)
-        column_names = next(reader) if column_names is None else column_names
+        if column_names is None:
+            column_names = next(reader)
         if dataclass is None:
             yield from (dict(zip(column_names, row)) for row in reader)
             return
@@ -202,25 +216,32 @@ def csv_load(
             raise TypeError(f"{dataclass} must be a dataclass or dict")
         column_indices = {name: i for i, name in enumerate(column_names)}
         type_hints = get_type_hints(dataclass)
-        field_map = {
-            field.name: (
+
+        if field_to_column_name is None:
+            field_to_column_name = {
+                field.name: field.metadata.get(field_metadata_key, field.name)
+                for field in fields(dataclass)
+            }
+        field_to_index_and_converter = {
+            field_name: (
                 index,
-                _build_converter(type_hints.get(field.name, str)),
+                _build_converter(type_hints.get(field_name, str)),
             )
-            for field in fields(dataclass)
-            if (
-                index := column_indices.get(
-                    field.metadata.get(field_metadata_key, field.name), None
-                )
-            )
-            is not None
+            for field_name, column_name in field_to_column_name.items()
+            if (index := column_indices.get(column_name)) is not None
         }
+        if init_function is None:
+            init_function = dataclass
         yield from (
-            dataclass(
+            init_function(
+                **(init_arguments or {}),
                 **{
                     name: conv(row[index])
-                    for name, (index, conv) in field_map.items()
-                }
+                    for name, (
+                        index,
+                        conv,
+                    ) in field_to_index_and_converter.items()
+                },
             )
             for row in reader
         )
