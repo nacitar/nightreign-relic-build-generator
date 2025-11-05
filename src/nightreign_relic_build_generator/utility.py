@@ -3,6 +3,7 @@ from __future__ import annotations
 import codecs
 import csv
 import json
+import logging
 import os
 import re
 import threading
@@ -15,7 +16,6 @@ from typing import (
     Any,
     ByteString,
     Callable,
-    Iterable,
     Iterator,
     Sequence,
     TextIO,
@@ -23,6 +23,8 @@ from typing import (
     get_type_hints,
     overload,
 )
+
+logger = logging.getLogger(__name__)
 
 RESOURCE_FILES = files(f"{__package__}.resources")
 
@@ -161,6 +163,10 @@ def _build_converter(typ: type[T]) -> Callable[[str], Any]:
     return converter
 
 
+class ColumnSubsetError(Exception):
+    pass
+
+
 @overload
 def csv_load(
     source: TextProvider,
@@ -172,7 +178,8 @@ def csv_load(
     field_to_column_name: dict[str, str] | None = ...,
     init_arguments: dict[str, Any] | None = ...,
     init_function: Callable[..., dict[str, str]] | None = ...,
-) -> Iterable[dict[str, str]]: ...
+    allow_column_subset: bool = ...,
+) -> Iterator[dict[str, str]]: ...
 
 
 @overload
@@ -186,7 +193,8 @@ def csv_load(
     field_to_column_name: dict[str, str] | None = ...,
     init_arguments: dict[str, Any] | None = ...,
     init_function: Callable[..., T] | None = ...,
-) -> Iterable[T]: ...
+    allow_column_subset: bool = ...,
+) -> Iterator[T]: ...
 
 
 def csv_load(
@@ -199,7 +207,8 @@ def csv_load(
     field_to_column_name: dict[str, str] | None = None,
     init_arguments: dict[str, Any] | None = None,
     init_function: Callable[..., T | dict[str, str]] | None = None,
-) -> Iterable[T] | Iterable[dict[str, str]]:
+    allow_column_subset: bool = True,
+) -> Iterator[T] | Iterator[dict[str, str]]:
     """Load CSV data into dicts or dataclass instances.
 
     For custom field types, a classmethod `from_string(cls, s: str)` may be
@@ -243,6 +252,14 @@ def csv_load(
             for field_name, column_name in field_to_column_name.items()
             if (index := column_indices.get(column_name)) is not None
         }
+        if len(field_to_column_name) < len(column_names):
+            message = (
+                f"Only {len(field_to_index_and_converter)} fields"
+                f" read of the {len(column_names)} present in CSV data."
+            )
+            logger.debug(message)
+            if not allow_column_subset:
+                raise ColumnSubsetError(message)
         yield from (
             init_function(
                 **init_arguments,

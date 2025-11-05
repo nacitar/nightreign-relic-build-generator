@@ -5,6 +5,7 @@ from dataclasses import InitVar, dataclass, field
 import pytest
 
 from nightreign_relic_build_generator.utility import (
+    ColumnSubsetError,
     csv_load,
     register_converter,
 )
@@ -131,6 +132,16 @@ def test_csv_load_into_dict(csv_rows: list[str]) -> None:
     lines = [header, *csv_rows]
     mapping = {"the_float": "float_number", "the_string": "string"}
     init_args = {"extra_argument": "extra"}
+
+    with pytest.raises(ColumnSubsetError):
+        next(
+            csv_load(
+                lines,
+                field_to_column_name=mapping,
+                init_arguments=init_args,
+                allow_column_subset=False,
+            )
+        )
 
     results = list(
         csv_load(lines, field_to_column_name=mapping, init_arguments=init_args)
