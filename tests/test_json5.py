@@ -1,4 +1,4 @@
-from nightreign_relic_build_generator.utility import json5_load
+from nightreign_build_generator.utility import json5_load
 
 
 def test_strip_json5_comments_and_trailing_commas() -> None:

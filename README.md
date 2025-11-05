@@ -57,18 +57,19 @@ for `ironeye_deep-of-night` provide an excellent example.
 
 # Usage
 This section assumes that the project is available and can be invoked via the
-alias `app`, which is how it would work if you were using the *poetry* tool to
-manage the project.  If you set it up in other ways, you may instead be
-invoking it as a python module `python3 -m nightreign_relic_build_generator`.
-In either case, this section discusses the CLI arguments.  For setup, look in
-the *Setup* section.
+alias `nightreign-build-generator`, which is how it would work if you were
+using the *poetry* tool to manage the project.  If you set it up in other ways,
+you may instead be invoking it as a python module
+`python3 -m nightreign_relic_build_generator`.  In either case, this section
+discusses the CLI arguments.  For setup, look in the *Setup* section.
 
 
 The tool has several subcommands and can generally be invoked via:
 ```bash
-app <subcommand>
+nightreign-build-generator <subcommand>
+
 # with extra logging
-app -v <subcommand>
+nightreign-build-generator -v <subcommand>
 ```
 
 The subcommands are documented below.
@@ -78,7 +79,7 @@ The subcommands are documented below.
 This subcommand simply lists the names of the builtin score tables included in
 the tool. Invoke it via:
 ```bash
-app list-builtins
+nightreign-build-generator list-builtins
 ```
 ## Subcommands Requiring a Save File
 There are common arguments for commands that require a save file.  Obviously
@@ -95,7 +96,7 @@ This subcommand doesn't find any builds, it simply dumps the relics found in
 your save file.  Even though the save slot index defaults to 0, here's an
 example explicitly setting it to 0 as an example:
 ```bash
-app dump-relics YourSave.sl2 -i 0
+nightreign-build-generator dump-relics YourSave.sl2 -i 0
 ```
 The output will also report any relics whose item ids are not recognized or
 have any effect ids that aren't recognized.  Without a recognized item id, the
@@ -131,7 +132,7 @@ Power-user options you probably don't want to change:
 An example invocation using the vessels for raider and using the builtin score
 table I've created as an example for raider:
 ```bash
-app compute YourSave.sl2 -c raider -b raider
+nightreign-build-generator compute YourSave.sl2 -c raider -b raider
 ```
 
 # Setup
@@ -142,5 +143,5 @@ supported here.  Once your system has poetry availabe and in PATH:
 ```bash
 # from the project directory tree; install is only needed once per pull
 poetry install
-poetry run app <arguments>
+poetry run nightreign-build-generator <arguments>
 ```

@@ -1,5 +1,5 @@
 [project]
-name = "nightreign_relic_build_generator"
+name = "nightreign_build_generator"
 version = "0.1.0"
 description = "A build finder/generator for NightReign"
 authors = [
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "nightreign_relic_build_generator", from = "src"}]
+packages = [{include = "nightreign_build_generator", from = "src"}]
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.9.0"
@@ -40,5 +40,4 @@ profile = "black"
 strict = true
 
 [tool.poetry.scripts]
-app = "nightreign_relic_build_generator.__main__:main"
-checks = "nightreign_relic_build_generator.devtools.checks:main"
+nightreign-build-generator = "nightreign_build_generator.__main__:main"

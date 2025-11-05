@@ -4,7 +4,7 @@ from dataclasses import InitVar, dataclass, field
 
 import pytest
 
-from nightreign_relic_build_generator.utility import (
+from nightreign_build_generator.utility import (
     ColumnSubsetError,
     csv_load,
     register_converter,

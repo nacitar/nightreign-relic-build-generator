@@ -1,4 +1,4 @@
-from nightreign_relic_build_generator import __version__
+from nightreign_build_generator import __version__
 
 
 def test_version_defined() -> None:
