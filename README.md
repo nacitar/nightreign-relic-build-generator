@@ -1,4 +1,4 @@
-# Nightreign Relic Build Generator
+# Nightreign Build Generator
 This utility is used to find combinations of your relics which can be equipped
 together in order to make a desirable build.
 
