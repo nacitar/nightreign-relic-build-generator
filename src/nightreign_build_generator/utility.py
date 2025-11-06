@@ -13,6 +13,7 @@ from importlib.resources import files
 from inspect import signature
 from io import StringIO
 from pathlib import Path
+from types import UnionType
 from typing import (
     Any,
     ByteString,
@@ -21,6 +22,7 @@ from typing import (
     Sequence,
     TextIO,
     TypeVar,
+    get_args,
     get_type_hints,
     overload,
 )
@@ -149,19 +151,39 @@ def register_converter(
         _CONVERTER_CACHE[typ] = converter
 
 
-def _build_converter(typ: type[T]) -> Callable[[str], Any]:
+def _build_converter(typ: type[T]) -> list[Callable[[str], Any]]:
     """Return a function that converts a CSV cell string to the target type."""
+    converters: list[Callable[[str], Any]] = []
     with _CONVERTER_LOCK:
-        if (converter := _CONVERTER_CACHE.get(typ)) is None:
-            if callable(method := getattr(typ, "from_string", None)):
+        for leaf_type in iterate_leaf_types(typ):
+            if (converter := _CONVERTER_CACHE.get(leaf_type)) is None:
+                if callable(method := getattr(leaf_type, "from_string", None)):
 
-                def converter(value: str) -> Any:
-                    return method(value)  # call T.from_string
+                    def converter(value: str) -> Any:
+                        return method(value)  # call T.from_string
 
-                _CONVERTER_CACHE[typ] = converter
+                    _CONVERTER_CACHE[leaf_type] = converter
+            if converter is not None:
+                converters.append(converter)
             else:
-                raise TypeError(f"No conversion registered for: {typ}")
-    return converter
+                logger.debug(f"Skipping type without converter: {leaf_type}")
+    if not converters:
+        raise TypeError(f"No conversion registered for type(s): {typ}")
+    return converters
+
+
+def first_valid_conversion(
+    value: str, converters: list[Callable[[str], Any]]
+) -> Any:
+    for converter in converters:
+        try:
+            return converter(value)
+        except Exception:
+            continue
+    raise TypeError(
+        f"No valid conversion found with {len(converters)} converters"
+        f" for value: {value}"
+    )
 
 
 class ColumnSubsetError(Exception):
@@ -184,6 +206,18 @@ def get_callable_argument_hints(
         for member in signature(function).parameters.keys()
         if member != "return"
     }
+
+
+def iterate_leaf_types(typ: type) -> Iterator[type]:
+    stack = [typ]
+    seen: set[type] = set()
+    while stack:
+        current = stack.pop()
+        if isinstance(current, UnionType):
+            stack.extend(reversed(get_args(current)))
+        elif current not in seen:
+            seen.add(current)
+            yield current
 
 
 @overload
@@ -214,7 +248,6 @@ def csv_load(
 ) -> Iterator[T]: ...
 
 
-# TODO: what if init_function's return doesn't match dataclass?
 def csv_load(
     source: TextProvider,
     *,
@@ -284,14 +317,13 @@ def csv_load(
             logger.debug(message)
             if not allow_column_subset:
                 raise ColumnSubsetError(message)
-
         yield from (
             init_function(
                 **{
-                    name: conv(row[index])
+                    name: first_valid_conversion(row[index], converters)
                     for name, (
                         index,
-                        conv,
+                        converters,
                     ) in field_to_index_and_converter.items()
                 }
             )

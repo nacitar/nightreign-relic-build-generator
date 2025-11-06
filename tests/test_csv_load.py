@@ -206,3 +206,56 @@ def test_csv_load_custom_delimiter() -> None:
     csv_data = ["a|b|c", "1|2|3"]
     results = list(csv_load(csv_data, delimiter="|"))
     assert results == [{"a": "1", "b": "2", "c": "3"}]
+
+
+@pytest.fixture
+def data_scores_header() -> str:
+    return "id,name,score_1,score_2,bonus_score"
+
+
+@pytest.fixture
+def data_scores_rows() -> list[str]:
+    return ["7,John Doe,97.2,79,50", "abc-123,John Doe,97.2,79,50"]
+
+
+@pytest.fixture
+def data_scores_lines(
+    data_scores_header: str, data_scores_rows: list[str]
+) -> list[str]:
+    return [data_scores_header, *data_scores_rows]
+
+
+def test_csv_load_dataclass_initvar_and_init_false(
+    data_scores_lines: list[str], data_scores_rows: list[str]
+) -> None:
+    @dataclass
+    class TestClass:
+        id: int | str
+        name: str
+        scores: list[float] = field(init=False, default_factory=list)
+        score_1: InitVar[float]
+        score_2: InitVar[float]
+        score_3: InitVar[float] = field(metadata={"csv_key": "bonus_score"})
+
+        def __post_init__(
+            self, score_1: float, score_2: float, score_3: float
+        ) -> None:
+            self.scores = [score_1, score_2, score_3]
+
+    instances = list(csv_load(data_scores_lines, dataclass=TestClass))
+
+    def int_or_str(value: str) -> int | str:
+        try:
+            return int(value)
+        except ValueError:
+            return value
+
+    for instance, row in zip(instances, data_scores_rows):
+        id, name, score_1, score_2, bonus_score = row.split(",")
+        assert instance.id == int_or_str(id)
+        assert instance.name == name
+        assert instance.scores == [
+            float(score_1),
+            float(score_2),
+            float(bonus_score),
+        ]
