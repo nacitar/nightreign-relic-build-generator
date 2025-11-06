@@ -8,8 +8,9 @@ import os
 import re
 import threading
 from contextlib import contextmanager
-from dataclasses import fields, is_dataclass
+from dataclasses import InitVar, is_dataclass
 from importlib.resources import files
+from inspect import signature
 from io import StringIO
 from pathlib import Path
 from typing import (
@@ -159,12 +160,30 @@ def _build_converter(typ: type[T]) -> Callable[[str], Any]:
 
                 _CONVERTER_CACHE[typ] = converter
             else:
-                raise TypeError(f"No conversion registered for {typ.__name__}")
+                raise TypeError(f"No conversion registered for: {typ}")
     return converter
 
 
 class ColumnSubsetError(Exception):
     pass
+
+
+def get_callable_argument_hints(
+    function: Callable[..., Any],
+) -> dict[str, type]:
+    type_hints = {
+        member: (
+            member_type
+            if not isinstance(member_type, InitVar)
+            else member_type.type
+        )
+        for member, member_type in get_type_hints(function).items()
+    }
+    return {
+        member: type_hints[member]
+        for member in signature(function).parameters.keys()
+        if member != "return"
+    }
 
 
 @overload
@@ -176,7 +195,6 @@ def csv_load(
     dataclass: None = ...,
     field_metadata_key: str = ...,
     field_to_column_name: dict[str, str] | None = ...,
-    init_arguments: dict[str, Any] | None = ...,
     init_function: Callable[..., dict[str, str]] | None = ...,
     allow_column_subset: bool = ...,
 ) -> Iterator[dict[str, str]]: ...
@@ -191,12 +209,12 @@ def csv_load(
     dataclass: type[T] = ...,
     field_metadata_key: str = ...,
     field_to_column_name: dict[str, str] | None = ...,
-    init_arguments: dict[str, Any] | None = ...,
     init_function: Callable[..., T] | None = ...,
     allow_column_subset: bool = ...,
 ) -> Iterator[T]: ...
 
 
+# TODO: what if init_function's return doesn't match dataclass?
 def csv_load(
     source: TextProvider,
     *,
@@ -205,7 +223,6 @@ def csv_load(
     dataclass: type[T] | None = None,
     field_metadata_key: str = "csv_key",
     field_to_column_name: dict[str, str] | None = None,
-    init_arguments: dict[str, Any] | None = None,
     init_function: Callable[..., T | dict[str, str]] | None = None,
     allow_column_subset: bool = True,
 ) -> Iterator[T] | Iterator[dict[str, str]]:
@@ -216,10 +233,14 @@ def csv_load(
     """
     with open_text_io(source) as source_io:
         reader = csv.reader(source_io, delimiter=delimiter)
-        if init_arguments is None:
-            init_arguments = {}
         if column_names is None:
             column_names = next(reader)
+        if init_function is not None:
+            type_hints = get_callable_argument_hints(init_function)
+            if field_to_column_name is None:
+                field_to_column_name = {key: key for key in type_hints}
+        else:
+            type_hints = None
         column_indices = {name: i for i, name in enumerate(column_names)}
         if dataclass is not None:
             if not is_dataclass(dataclass):
@@ -228,22 +249,25 @@ def csv_load(
                 )
             if init_function is None:
                 init_function = dataclass
+            if type_hints is None:
+                type_hints = get_callable_argument_hints(dataclass)
             if field_to_column_name is None:
                 field_to_column_name = {
-                    field.name: field.metadata.get(
-                        field_metadata_key, field.name
+                    name: dataclass.__dataclass_fields__[name].metadata.get(
+                        field_metadata_key, name
                     )
-                    for field in fields(dataclass)
+                    for name in type_hints
                 }
-            type_hints = get_type_hints(dataclass)
         else:
-            if not init_function:
+            if init_function is None:
                 init_function = dict
+            if type_hints is None:
+                type_hints = {}
             if field_to_column_name is None:
                 field_to_column_name = {
                     column_name: column_name for column_name in column_names
                 }
-            type_hints = {}
+
         field_to_index_and_converter = {
             field_name: (
                 index,
@@ -260,16 +284,16 @@ def csv_load(
             logger.debug(message)
             if not allow_column_subset:
                 raise ColumnSubsetError(message)
+
         yield from (
             init_function(
-                **init_arguments,
                 **{
                     name: conv(row[index])
                     for name, (
                         index,
                         conv,
                     ) in field_to_index_and_converter.items()
-                },
+                }
             )
             for row in reader
         )
